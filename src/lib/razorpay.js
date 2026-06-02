@@ -15,8 +15,12 @@ export async function openPayment({ amount, clientName, clientEmail = '', client
     return;
   }
 
-  // Replace with your Razorpay key — set REACT_APP_RAZORPAY_KEY in .env
-  const key = process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_YOUR_KEY_HERE';
+  // Key priority: Settings page → .env → placeholder
+  let key = 'rzp_test_YOUR_KEY_HERE';
+  try {
+    const s = JSON.parse(localStorage.getItem('ca_settings') || '{}');
+    key = s.razorpayKey || process.env.REACT_APP_RAZORPAY_KEY || key;
+  } catch { key = process.env.REACT_APP_RAZORPAY_KEY || key; }
 
   const options = {
     key,

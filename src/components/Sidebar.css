@@ -63,3 +63,13 @@
   font-size: 10px; background: var(--accent); color: #fff;
   padding: 1px 6px; border-radius: 10px; font-weight: 600;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed; left: 0; top: 44px; bottom: 0;
+    z-index: 300; transform: translateX(-100%);
+    transition: transform 0.25s ease; box-shadow: var(--shadow-lg);
+  }
+  .sidebar.sidebar-open { transform: translateX(0); }
+}

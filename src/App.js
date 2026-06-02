@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import AuthPage from './pages/AuthPage';
@@ -10,95 +10,86 @@ import InvoicesPage from './pages/InvoicesPage';
 import DocumentsPage from './pages/DocumentsPage';
 import DeadlinesPage from './pages/DeadlinesPage';
 import RemindersPage from './pages/RemindersPage';
+import SettingsPage from './pages/SettingsPage';
 import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
+import { generateToken } from './lib/utils';
 import './App.css';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
 const getStoredClients = () => {
-  try {
-    const s = localStorage.getItem('ca_clients');
-    return s ? JSON.parse(s) : seedClients;
-  } catch { return seedClients; }
+  try { const s = localStorage.getItem('ca_clients'); return s ? JSON.parse(s) : seedClients; }
+  catch { return seedClients; }
 };
-
 const getStoredAuth = () => {
-  try { return JSON.parse(localStorage.getItem('ca_auth')); }
-  catch { return null; }
+  try { return JSON.parse(localStorage.getItem('ca_auth')); } catch { return null; }
 };
 
-// ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser]                 = useState(getStoredAuth);
-  const [screen, setScreen]             = useState(() => user ? 'dashboard' : 'landing');
-  const [clients, setClients]           = useState(getStoredClients);
-  const [selectedClient, setSelected]   = useState(null);
-  const [sidebarTab, setSidebarTab]     = useState('dashboard');
-  const [authTab, setAuthTab]           = useState('signin');
-  const [modalMode, setModalMode]       = useState(null);
-  const [editingClient, setEditing]     = useState(null);
-  const [portalClient, setPortalClient] = useState(null);
-  const [toast, setToast]               = useState(null);
+  // ALL hooks must be called unconditionally at the top
+  const [user, setUser]               = useState(getStoredAuth);
+  const [screen, setScreen]           = useState(() => getStoredAuth() ? 'dashboard' : 'landing');
+  const [clients, setClients]         = useState(getStoredClients);
+  const [selectedClient, setSelected] = useState(null);
+  const [sidebarTab, setSidebarTab]   = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modalMode, setModalMode]     = useState(null);
+  const [editingClient, setEditing]   = useState(null);
+  const [portalPreview, setPortalPreview] = useState(null);
+  const [toast, setToast]             = useState(null);
+  const [authTab, setAuthTab]         = useState('signin');
 
-  // Persist clients to localStorage whenever they change
+  // Check URL for client portal token (must be after all hooks)
+  const urlToken = useMemo(() => new URLSearchParams(window.location.search).get('portal'), []);
+  const portalAccessClient = useMemo(
+    () => urlToken ? clients.find(c => c.portalToken === urlToken) : null,
+    [urlToken, clients]
+  );
+
   useEffect(() => {
     localStorage.setItem('ca_clients', JSON.stringify(clients));
   }, [clients]);
 
-  // ── Toast ──────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ── Auth ───────────────────────────────────────────────────────────────
-  const handleLogin = (userData) => {
-    setUser(userData);
-    setScreen('dashboard');
-    setSidebarTab('dashboard');
+  const handleLogin = (u) => {
+    setUser(u); setScreen('dashboard'); setSidebarTab('dashboard');
   };
-
   const handleLogout = () => {
-    localStorage.removeItem('ca_auth');
-    setUser(null);
-    setScreen('landing');
+    localStorage.removeItem('ca_auth'); setUser(null); setScreen('landing');
   };
 
-  // ── Navigation ──────────────────────────────────────────────────────────
   const goTo = (s, tab) => {
-    if (!user && s !== 'landing' && s !== 'auth') {
-      setAuthTab(tab || 'signin');
-      setScreen('auth');
-      return;
-    }
-    if (s === 'auth') { setAuthTab(tab || 'signin'); }
+    if (!user && s !== 'landing' && s !== 'auth') { setAuthTab(tab || 'signin'); setScreen('auth'); return; }
+    if (s === 'auth') setAuthTab(tab || 'signin');
     setScreen(s);
     if (s !== 'detail') setSelected(null);
+    setSidebarOpen(false);
   };
 
   const handleSidebarSelect = (tab) => {
     setSidebarTab(tab);
-    const map = { dashboard: 'dashboard', clients: 'dashboard', documents: 'documents', deadlines: 'deadlines', invoices: 'invoices', reminders: 'reminders' };
+    const map = { dashboard: 'dashboard', clients: 'dashboard', documents: 'documents', deadlines: 'deadlines', invoices: 'invoices', reminders: 'reminders', settings: 'settings' };
     setScreen(map[tab] || 'dashboard');
     setSelected(null);
+    setSidebarOpen(false);
   };
 
   const handleSelectClient = (client) => {
     setSelected(clients.find(c => c.id === client.id) || client);
     setScreen('detail');
     setSidebarTab('clients');
+    setSidebarOpen(false);
   };
 
-  // ── Client CRUD ─────────────────────────────────────────────────────────
   const addClient = (data) => {
-    const newClient = {
-      id: Date.now(), ...data,
-      status: 'waiting_docs', docsReceived: 0, feePaid: false,
-      timeline: [{ action: 'Client added to portal', time: 'Just now', type: 'gray' }],
-    };
-    setClients(prev => [...prev, newClient]);
+    const c = { id: Date.now(), portalToken: generateToken(), ...data, status: 'waiting_docs', docsReceived: 0, feePaid: false, timeline: [{ action: 'Client added to portal', time: 'Just now', type: 'gray' }] };
+    setClients(prev => [...prev, c]);
     setModalMode(null);
-    showToast(`${data.name} added successfully`);
+    showToast(`${data.name} added — portal link ready`);
   };
 
   const updateClient = (id, updates) => {
@@ -114,26 +105,53 @@ export default function App() {
   };
 
   const handleFormSave = (data) => {
-    if (modalMode === 'edit' && editingClient) {
-      updateClient(editingClient.id, data);
-      showToast(`${data.name} updated`);
-    } else {
-      addClient(data);
-    }
+    if (modalMode === 'edit' && editingClient) { updateClient(editingClient.id, data); showToast(`${data.name} updated`); }
+    else addClient(data);
     setModalMode(null); setEditing(null);
   };
 
-  // ── Derived state ────────────────────────────────────────────────────────
-  const liveClient = selectedClient
-    ? (clients.find(c => c.id === selectedClient.id) || selectedClient)
-    : null;
+  const handleDocumentUploaded = (clientId, docName, fileInfo) => {
+    updateClient(clientId, {
+      documents: (clients.find(c => c.id === clientId)?.documents || []).map(d =>
+        d.name === docName ? { ...d, uploaded: true, date: 'Just now', fileInfo } : d
+      ),
+      docsReceived: (clients.find(c => c.id === clientId)?.documents || []).filter(d => d.uploaded).length + 1,
+      timeline: [
+        { action: `${docName} uploaded by client`, time: 'Just now', type: 'green' },
+        ...(clients.find(c => c.id === clientId)?.timeline || []),
+      ],
+    });
+  };
 
-  const showSidebar = user && !['landing', 'portal', 'auth'].includes(screen);
+  // ── Client-facing portal (no auth needed) ────────────────────────────────
+  if (portalAccessClient) {
+    return (
+      <>
+        <ClientPortal
+          client={portalAccessClient}
+          isClientView
+          onDocumentUploaded={handleDocumentUploaded}
+          showToast={showToast}
+        />
+        {toast && (
+          <div className={`app-toast app-toast-${toast.type}`}>
+            <span className="toast-icon">{toast.type === 'success' ? '✓' : '✗'}</span>
+            {toast.msg}
+          </div>
+        )}
+      </>
+    );
+  }
 
-  // ── Auth gate ────────────────────────────────────────────────────────────
+  // ── Auth gate ─────────────────────────────────────────────────────────────
   if (screen === 'auth' || (!user && screen !== 'landing')) {
     return <AuthPage onLogin={handleLogin} defaultTab={authTab} />;
   }
+
+  const liveClient = selectedClient
+    ? (clients.find(c => c.id === selectedClient.id) || selectedClient)
+    : null;
+  const showSidebar = user && !['landing', 'portal', 'auth'].includes(screen);
 
   return (
     <div className="app-root">
@@ -143,11 +161,22 @@ export default function App() {
           setScreen={goTo}
           user={user}
           onLogout={handleLogout}
+          onMenuToggle={() => setSidebarOpen(o => !o)}
+          showMenu={showSidebar}
         />
       )}
       <div className="app-body">
         {showSidebar && (
-          <Sidebar active={sidebarTab} onSelect={handleSidebarSelect} clients={clients} />
+          <Sidebar
+            active={sidebarTab}
+            onSelect={handleSidebarSelect}
+            clients={clients}
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
+        )}
+        {showSidebar && sidebarOpen && (
+          <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
         )}
         <main className="app-main">
           {screen === 'landing' && (
@@ -173,33 +202,24 @@ export default function App() {
               onUpdateClient={updateClient}
               onArchive={archiveClient}
               onEdit={c => { setEditing(c); setModalMode('edit'); }}
-              onViewPortal={c => { setPortalClient(c); goTo('portal'); }}
+              onViewPortal={c => { setPortalPreview(c); goTo('portal'); }}
               onGoInvoices={() => { setScreen('invoices'); setSidebarTab('invoices'); }}
               showToast={showToast}
             />
           )}
           {screen === 'portal' && (
             <ClientPortal
-              client={portalClient || clients[0]}
+              client={portalPreview || clients[0]}
               onBack={() => goTo('dashboard')}
+              onDocumentUploaded={handleDocumentUploaded}
               showToast={showToast}
             />
           )}
-          {screen === 'invoices' && (
-            <InvoicesPage
-              clients={clients}
-              onUpdateClient={updateClient}
-              onSelectClient={handleSelectClient}
-              showToast={showToast}
-            />
-          )}
-          {screen === 'documents' && (
-            <DocumentsPage clients={clients} onSelectClient={handleSelectClient} />
-          )}
+          {screen === 'invoices'  && <InvoicesPage  clients={clients} onUpdateClient={updateClient} onSelectClient={handleSelectClient} showToast={showToast} />}
+          {screen === 'documents' && <DocumentsPage clients={clients} onSelectClient={handleSelectClient} />}
           {screen === 'deadlines' && <DeadlinesPage showToast={showToast} />}
-          {screen === 'reminders' && (
-            <RemindersPage clients={clients} showToast={showToast} />
-          )}
+          {screen === 'reminders' && <RemindersPage clients={clients} showToast={showToast} />}
+          {screen === 'settings'  && <SettingsPage  user={user} setUser={setUser} showToast={showToast} />}
         </main>
       </div>
 

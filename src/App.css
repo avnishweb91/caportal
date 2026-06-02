@@ -1,6 +1,19 @@
 .app-root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-.app-body { display: flex; flex: 1; overflow: hidden; }
+.app-body { display: flex; flex: 1; overflow: hidden; position: relative; }
 .app-main { flex: 1; overflow-y: auto; background: var(--bg); }
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0; top: 44px;
+  background: rgba(0,0,0,0.5); z-index: 299;
+}
+
+@media (max-width: 768px) {
+  .sidebar-backdrop { display: block; }
+  .navbar-hamburger { display: flex !important; }
+  .navbar-screens { display: none; }
+  .navbar-status { display: none; }
+}
 
 .app-toast {
   position: fixed; bottom: 24px; right: 24px;

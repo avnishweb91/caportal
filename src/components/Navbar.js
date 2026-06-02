@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Navbar.css';
 
-export default function Navbar({ currentScreen, setScreen, user, onLogout }) {
+export default function Navbar({ currentScreen, setScreen, user, onLogout, onMenuToggle, showMenu }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const screens = [
@@ -17,6 +17,11 @@ export default function Navbar({ currentScreen, setScreen, user, onLogout }) {
   return (
     <nav className="navbar">
       <div className="navbar-left">
+        {showMenu && (
+          <button className="navbar-hamburger" onClick={onMenuToggle} aria-label="Menu">
+            <span /><span /><span />
+          </button>
+        )}
         <div className="navbar-logo">
           <div className="navbar-logo-icon">CA</div>
           CAPortal

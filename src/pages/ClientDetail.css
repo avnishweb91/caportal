@@ -69,3 +69,18 @@
 }
 .status-menu-item:hover { background: var(--bg2); }
 .status-menu-item.active { background: var(--bg3); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .detail-header { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+  .detail-header-right { flex-wrap: wrap; gap: 4px; }
+  .detail-hero { padding: 14px; }
+  .detail-name { font-size: 16px; }
+  .detail-meta { flex-wrap: wrap; gap: 6px; }
+  .detail-body { padding: 12px 14px; }
+  .detail-info-row { grid-template-columns: 1fr 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-actions { flex-wrap: wrap; gap: 6px; padding: 12px 14px; }
+  .detail-actions .btn { font-size: 11px; padding: 6px 10px; }
+  .detail-actions div[style] { margin-left: 0 !important; }
+}

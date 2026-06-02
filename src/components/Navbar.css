@@ -54,6 +54,14 @@
 .num-item:hover { background: var(--bg2); color: var(--text); }
 .num-item-danger { color: var(--red); }
 .num-item-danger:hover { background: var(--red-dim); color: var(--red); }
+.navbar-hamburger {
+  display: none; flex-direction: column; justify-content: center;
+  gap: 4px; width: 28px; height: 28px; background: none; border: none; padding: 4px; cursor: pointer;
+}
+.navbar-hamburger span {
+  display: block; height: 2px; background: var(--text2); border-radius: 2px; transition: 0.2s;
+}
+
 .navbar-status {
   display: flex; align-items: center; gap: 5px;
   font-size: 11px; color: var(--text3);

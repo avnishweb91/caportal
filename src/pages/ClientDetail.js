@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getPortalUrl, copyToClipboard } from '../lib/utils';
+import { printInvoice } from '../lib/invoice';
 import './ClientDetail.css';
 
 const dotColors = { green: 'var(--green)', blue: 'var(--accent)', amber: 'var(--amber)', gray: 'var(--bg4)', red: 'var(--red)' };
@@ -15,6 +17,15 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [newDocName, setNewDocName] = useState('');
   const [showDocInput, setShowDocInput] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleCopyPortalLink = async () => {
+    const url = getPortalUrl(client.portalToken);
+    await copyToClipboard(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
+    showToast('Portal link copied — send to client via WhatsApp');
+  };
 
   if (!client) return null;
 
@@ -222,17 +233,17 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
       </div>
 
       <div className="detail-actions">
-        <button className="btn btn-primary" onClick={() => showToast('WhatsApp message sent (integration ready for Gupshup API key)')}>
+        <button className="btn btn-primary" onClick={() => showToast('WhatsApp integration ready — add Gupshup API key in Settings')}>
           💬 Send WhatsApp
         </button>
-        <button className="btn btn-ghost" onClick={onGoInvoices}>
-          📄 View invoice
+        <button className={`btn ${linkCopied ? 'btn-primary' : 'btn-ghost'}`} onClick={handleCopyPortalLink}>
+          {linkCopied ? '✓ Link copied!' : '🔗 Copy portal link'}
+        </button>
+        <button className="btn btn-ghost" onClick={() => printInvoice(client)}>
+          📄 Download invoice
         </button>
         <button className="btn btn-ghost" onClick={() => onViewPortal(client)}>
-          🔗 Preview portal
-        </button>
-        <button className="btn btn-ghost" onClick={() => showToast('PDF bundling available in Phase 2')}>
-          📥 Download docs
+          👁 Preview portal
         </button>
         <div style={{ marginLeft: 'auto' }}>
           <button className="btn btn-danger" onClick={() => showToast(`Issue flagged for ${client.name}`)}>

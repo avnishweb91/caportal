@@ -1,6 +1,6 @@
 export const clients = [
   {
-    id: 1, name: "Priya Sharma", pan: "ABCPS1234D",
+    id: 1, portalToken: "pt_priya_sha_001", name: "Priya Sharma", pan: "ABCPS1234D",
     phone: "+91 98765 43210", email: "priya@example.com",
     type: "Individual ITR", plan: "Pro", status: "under_review",
     docsReceived: 4, docsTotal: 5, feeAmount: 3500, feePaid: false,
@@ -20,7 +20,7 @@ export const clients = [
     ],
   },
   {
-    id: 2, name: "Vikram Textiles", pan: "AABFV5678K",
+    id: 2, portalToken: "pt_vikram_tex_002", name: "Vikram Textiles", pan: "AABFV5678K",
     phone: "+91 97654 32109", email: "accounts@vikramtextiles.com",
     type: "GST + ITR", plan: "Starter", status: "docs_pending",
     docsReceived: 3, docsTotal: 5, feeAmount: 8000, feePaid: false,
@@ -38,7 +38,7 @@ export const clients = [
     ],
   },
   {
-    id: 3, name: "Anand Mehta", pan: "AAGPM9012F",
+    id: 3, portalToken: "pt_anand_meh_003", name: "Anand Mehta", pan: "AAGPM9012F",
     phone: "+91 96543 21098", email: "anand.mehta@gmail.com",
     type: "Individual ITR", plan: "Starter", status: "filed",
     docsReceived: 4, docsTotal: 4, feeAmount: 2500, feePaid: true,
@@ -56,7 +56,7 @@ export const clients = [
     ],
   },
   {
-    id: 4, name: "Sunita Reddy", pan: "AAQRS3456G",
+    id: 4, portalToken: "pt_sunita_red_004", name: "Sunita Reddy", pan: "AAQRS3456G",
     phone: "+91 95432 10987", email: "sunita.reddy@gmail.com",
     type: "Individual ITR", plan: "Pro", status: "waiting_docs",
     docsReceived: 3, docsTotal: 4, feeAmount: 3000, feePaid: false,
@@ -73,7 +73,7 @@ export const clients = [
     ],
   },
   {
-    id: 5, name: "Kavitha Nair", pan: "AACPN4567H",
+    id: 5, portalToken: "pt_kavitha_005", name: "Kavitha Nair", pan: "AACPN4567H",
     phone: "+91 94321 09876", email: "kavitha.nair@gmail.com",
     type: "Individual ITR", plan: "Starter", status: "waiting_docs",
     docsReceived: 1, docsTotal: 4, feeAmount: 2000, feePaid: false,
@@ -89,7 +89,7 @@ export const clients = [
     ],
   },
   {
-    id: 6, name: "Suresh Patel", pan: "AABFP3456J",
+    id: 6, portalToken: "pt_suresh_006", name: "Suresh Patel", pan: "AABFP3456J",
     phone: "+91 93210 98765", email: "suresh.patel@gmail.com",
     type: "GST + ITR", plan: "Pro", status: "docs_pending",
     docsReceived: 2, docsTotal: 6, feeAmount: 9500, feePaid: false,
@@ -107,7 +107,7 @@ export const clients = [
     ],
   },
   {
-    id: 7, name: "Meera Joshi", pan: "AAIPJ7890L",
+    id: 7, portalToken: "pt_meera_007", name: "Meera Joshi", pan: "AAIPJ7890L",
     phone: "+91 92109 87654", email: "meera.joshi@gmail.com",
     type: "Individual ITR", plan: "Starter", status: "filed",
     docsReceived: 4, docsTotal: 4, feeAmount: 2000, feePaid: true,
@@ -124,7 +124,7 @@ export const clients = [
     ],
   },
   {
-    id: 8, name: "Ravi Shankar Enterprises", pan: "AABCR1234M",
+    id: 8, portalToken: "pt_ravishankar_008", name: "Ravi Shankar Enterprises", pan: "AABCR1234M",
     phone: "+91 91098 76543", email: "accounts@ravishankar.in",
     type: "Company ITR", plan: "Firm", status: "under_review",
     docsReceived: 5, docsTotal: 7, feeAmount: 25000, feePaid: false,

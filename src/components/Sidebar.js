@@ -1,6 +1,6 @@
 import './Sidebar.css';
 
-export default function Sidebar({ active, onSelect, clients = [] }) {
+export default function Sidebar({ active, onSelect, clients = [], open, onClose }) {
   const docsMissing = clients.filter(c => c.status === 'docs_pending' || c.status === 'waiting_docs').length;
   const unpaidCount = clients.filter(c => !c.feePaid).length;
   const totalDocs = clients.reduce((s, c) => s + c.docsReceived, 0);
@@ -21,7 +21,7 @@ export default function Sidebar({ active, onSelect, clients = [] }) {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
       <div className="sb-section">
         <div className="sb-section-label">Workspace</div>
         {nav.map(item => (
@@ -36,9 +36,8 @@ export default function Sidebar({ active, onSelect, clients = [] }) {
       <div className="sb-divider" />
       <div className="sb-section">
         <div className="sb-section-label">Settings</div>
-        <button className="sb-item"><span className="sb-icon">⚙</span><span className="sb-label">Preferences</span></button>
-        <button className="sb-item"><span className="sb-icon">◈</span><span className="sb-label">Integrations</span></button>
-        <button className="sb-item"><span className="sb-icon">?</span><span className="sb-label">Help</span></button>
+        <button className={`sb-item ${active==='settings'?'active':''}`} onClick={()=>onSelect('settings')}><span className="sb-icon">⚙</span><span className="sb-label">Settings</span></button>
+        <button className="sb-item" onClick={()=>window.open('https://github.com/avnishweb91/caportal','_blank')}><span className="sb-icon">?</span><span className="sb-label">Help</span></button>
       </div>
       <div className="sb-footer">
         <div className="sb-plan">

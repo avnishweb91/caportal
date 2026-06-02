@@ -75,6 +75,37 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
     setSelected([]);
   };
 
+  if (clients.length === 0) {
+    return (
+      <div className="dashboard">
+        <div className="dash-toolbar">
+          <div className="dash-title-row">
+            <span className="dash-title">Dashboard</span>
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={onAddClient}>+ Add first client</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: 40, textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>◎</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Welcome to CAPortal</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', maxWidth: 400, marginBottom: 28, lineHeight: 1.7 }}>
+            Add your first client to get started. They'll get a private portal link where they can upload documents, check status, and pay fees.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 360, width: '100%', marginBottom: 28 }}>
+            {[['① Add a client', 'Enter their name, PAN, phone, filing type'],['② Share portal link', 'Send the link via WhatsApp — they open it on their phone'],['③ Collect documents', 'Clients upload, you track progress in one place']].map(([t, s]) => (
+              <div key={t} className="card" style={{ padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'flex-start', textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{t}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>{s}</div>
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-primary" style={{ fontSize: 13, padding: '10px 24px' }} onClick={onAddClient}>
+            Add your first client →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const recentActivity = [
     { text: `${clients.find(c=>c.id===1)?.name || 'Priya Sharma'} uploaded Form 16`, time: '2 min ago', color: 'var(--green)' },
     { text: 'Reminder sent to Vikram Textiles (bank statement)', time: '14 min ago', color: 'var(--amber)' },

@@ -10,9 +10,9 @@ const steps = [
   { label:'ITR filed',              time:'Pending',done:false, active:false },
 ];
 
-export default function ClientPortal({ client, onBack, showToast }) {
+export default function ClientPortal({ client, onBack, showToast, isClientView = false, onDocumentUploaded }) {
   const [tab, setTab] = useState('home');
-  const [toast, setToast] = useState(false);
+  const [toast, setToast] = useState(null);
   const [msg, setMsg] = useState('');
   const [paid, setPaid] = useState(client?.feePaid || false);
   const [msgs, setMsgs] = useState([
@@ -20,10 +20,21 @@ export default function ClientPortal({ client, onBack, showToast }) {
     { text:'Sure, will do it by tonight!', from:'client' },
   ]);
 
-  const handleUpload = () => {
-    setToast(true);
-    setTimeout(()=>setToast(false), 3000);
+  const showPortalToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  const handleFileChange = (e, targetDocName) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showPortalToast('File too large. Max 10MB.'); return; }
+    const docName = targetDocName || client.documents.find(d => !d.uploaded)?.name || file.name;
+    const fileInfo = { fileName: file.name, fileType: file.type, fileSize: file.size };
+    if (onDocumentUploaded) {
+      onDocumentUploaded(client.id, docName, fileInfo);
+    }
+    showPortalToast(`✓ ${file.name} uploaded as "${docName}"`);
+    e.target.value = '';
   };
+
 
   const sendMsg = () => {
     if (!msg.trim()) return;
@@ -109,13 +120,15 @@ export default function ClientPortal({ client, onBack, showToast }) {
               </div>
             )}
 
-            {toast && <div className="upload-toast">✓ Document uploaded successfully!</div>}
+            {toast && <div className="upload-toast">{toast}</div>}
             <div className="ps-title" style={{marginTop:14}}>Upload document</div>
-            <div className="upload-zone" onClick={handleUpload}>
+            <label className="upload-zone">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
+                onChange={e => handleFileChange(e, null)} />
               <div className="uz-icon">📤</div>
               <div className="uz-text">Tap to upload</div>
               <div className="uz-sub">PDF, JPG or PNG · max 10MB</div>
-            </div>
+            </label>
           </>}
 
           {tab==='status' && <>
@@ -147,11 +160,13 @@ export default function ClientPortal({ client, onBack, showToast }) {
                 </div>
               ))}
             </div>
-            <div className="upload-zone" onClick={handleUpload}>
+            <label className="upload-zone">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
+                onChange={e => handleFileChange(e, null)} />
               <div className="uz-icon">📤</div>
               <div className="uz-text">Upload more documents</div>
               <div className="uz-sub">PDF, JPG or PNG</div>
-            </div>
+            </label>
           </>}
 
           {tab==='msg' && <>
