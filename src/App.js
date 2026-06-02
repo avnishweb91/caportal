@@ -137,12 +137,14 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <Navbar
-        currentScreen={screen}
-        setScreen={goTo}
-        user={user}
-        onLogout={handleLogout}
-      />
+      {screen !== 'landing' && (
+        <Navbar
+          currentScreen={screen}
+          setScreen={goTo}
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
       <div className="app-body">
         {showSidebar && (
           <Sidebar active={sidebarTab} onSelect={handleSidebarSelect} clients={clients} />
