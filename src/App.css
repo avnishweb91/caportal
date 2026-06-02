@@ -1,0 +1,19 @@
+.app-root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.app-body { display: flex; flex: 1; overflow: hidden; }
+.app-main { flex: 1; overflow-y: auto; background: var(--bg); }
+
+.app-toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg1); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 12px; color: var(--text); z-index: 9999;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.2s ease;
+}
+.app-toast-success .toast-icon { color: var(--green); }
+.app-toast-error .toast-icon { color: var(--red); }
+@keyframes toast-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}

@@ -1,0 +1,109 @@
+.landing { background: var(--bg); min-height: 100vh; }
+
+/* NAV */
+.land-nav {
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 10;
+}
+.land-nav-logo { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.land-logo-box { width: 24px; height: 24px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+.land-nav-links { display: flex; gap: 24px; }
+.land-nav-link { font-size: 12px; color: var(--text3); background: none; border: none; transition: color 0.12s; }
+.land-nav-link:hover { color: var(--text2); }
+.land-nav-actions { display: flex; gap: 8px; align-items: center; }
+
+/* HERO */
+.hero {
+  padding: 96px 40px 80px; max-width: 860px; margin: 0 auto; text-align: center;
+  position: relative;
+}
+.hero::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse at center top, rgba(91,138,245,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--accent); background: var(--accent-dim);
+  border: 1px solid var(--accent-border); padding: 4px 12px;
+  border-radius: 20px; margin-bottom: 28px; font-weight: 500;
+}
+.hero-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.hero-h1 {
+  font-size: 52px; font-weight: 700; line-height: 1.08; letter-spacing: -2px;
+  color: var(--text); margin-bottom: 20px;
+}
+.hero-h1 em { color: var(--accent); font-style: normal; }
+.hero-h1 s { text-decoration: line-through; color: var(--text3); font-style: normal; }
+.hero-sub { font-size: 16px; color: var(--text2); line-height: 1.7; max-width: 520px; margin: 0 auto 36px; }
+.hero-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* STATS BAR */
+.stats-bar {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--bg1); padding: 0;
+}
+.stat-item {
+  flex: 1; padding: 20px 24px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-val { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -1px; font-family: var(--mono); }
+.stat-val span { color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/* FEATURES */
+.features { padding: 64px 40px; }
+.section-eyebrow { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+.section-h2 { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.8px; margin-bottom: 6px; }
+.section-sub { font-size: 13px; color: var(--text2); margin-bottom: 36px; }
+.feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border); }
+.feat-card { background: var(--bg1); padding: 24px; }
+.feat-card:hover { background: var(--bg2); }
+.feat-tag { display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 3px; margin-bottom: 14px; }
+.feat-tag-blue { background: var(--accent-dim); color: var(--accent); }
+.feat-tag-green { background: var(--green-dim); color: var(--green); }
+.feat-tag-amber { background: var(--amber-dim); color: var(--amber); }
+.feat-tag-purple { background: var(--purple-dim); color: var(--purple); }
+.feat-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.feat-desc { font-size: 12px; color: var(--text3); line-height: 1.7; }
+
+/* PRICING */
+.pricing { padding: 64px 40px; background: var(--bg1); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; }
+.pricing-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; position: relative; }
+.pricing-card.highlight { border-color: var(--accent-border); background: rgba(91,138,245,0.04); }
+.pricing-card.highlight .pricing-card-glow {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(ellipse at top, rgba(91,138,245,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+.popular-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; background: var(--accent); color: #fff; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.pc-tier { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.pc-price { font-size: 36px; font-weight: 700; color: var(--text); letter-spacing: -1.5px; line-height: 1; font-family: var(--mono); }
+.pc-period { font-size: 12px; color: var(--text3); margin-top: 4px; margin-bottom: 20px; }
+.pc-divider { height: 1px; background: var(--border); margin-bottom: 16px; }
+.pc-feature { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); padding: 5px 0; }
+.pc-check { color: var(--green); font-size: 11px; }
+
+/* CTA */
+.cta-section {
+  padding: 80px 40px; text-align: center;
+  background: radial-gradient(ellipse at center, rgba(91,138,245,0.08) 0%, transparent 60%);
+}
+.cta-h2 { font-size: 36px; font-weight: 700; color: var(--text); letter-spacing: -1px; margin-bottom: 12px; }
+.cta-sub { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+
+/* FOOTER */
+.land-footer {
+  border-top: 1px solid var(--border); padding: 20px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-copy { font-size: 11px; color: var(--text3); }
+.footer-links { display: flex; gap: 20px; }
+.footer-link { font-size: 11px; color: var(--text3); background: none; border: none; }
+.footer-link:hover { color: var(--text2); }
