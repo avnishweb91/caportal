@@ -107,3 +107,61 @@
 .footer-links { display: flex; gap: 20px; }
 .footer-link { font-size: 11px; color: var(--text3); background: none; border: none; }
 .footer-link:hover { color: var(--text2); }
+
+/* ── Landing modal ── */
+.lm-modal { width: 640px; max-width: calc(100vw - 32px); max-height: 80vh; overflow-y: auto; }
+
+.lm-body { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.lm-body h3 { font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+.lm-body p  { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.lm-body ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.lm-body li { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.lm-body a  { color: var(--accent); }
+.lm-lead    { font-size: 14px; color: var(--text); line-height: 1.7; font-weight: 500; }
+
+.lm-legal h3 { margin-top: 10px; }
+
+/* Blog */
+.lm-blog-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.lm-blog-meta { display: flex; align-items: center; gap: 10px; }
+.lm-blog-tag  { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 20px; }
+.lm-blog-date { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.lm-blog-title{ font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.5; }
+.lm-blog-desc { font-size: 12px; color: var(--text3); line-height: 1.6; }
+.lm-blog-read { background: none; border: none; color: var(--accent); font-size: 12px; cursor: pointer; padding: 0; text-align: left; width: fit-content; }
+.lm-blog-cta  { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--text3); }
+.lm-blog-cta a{ color: var(--accent); text-decoration: none; }
+
+/* Support */
+.lm-support-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lm-support-card  { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+.lm-sc-icon  { font-size: 24px; margin-bottom: 8px; }
+.lm-sc-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.lm-sc-desc  { font-size: 11px; color: var(--text3); margin-bottom: 8px; line-height: 1.5; }
+.lm-sc-link  { font-size: 12px; color: var(--accent); }
+.lm-hours    { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; }
+.lm-hours-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.lm-hours-row   { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid var(--border); }
+.lm-hours-row:last-child { border-bottom: none; }
+.lm-faq   { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.lm-faq:last-child { border-bottom: none; }
+.lm-faq-q { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.lm-faq-a { font-size: 12px; color: var(--text3); line-height: 1.7; }
+
+/* Status */
+.lm-status-hero { display: flex; align-items: center; gap: 12px; background: var(--green-dim); border: 1px solid rgba(61,214,140,0.2); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 8px; }
+.lm-status-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.lm-status-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.lm-status-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.lm-status-green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.lm-status-amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.lm-services     { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.lm-service-row  { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.lm-service-row:last-child { border-bottom: none; }
+.lm-service-row:hover { background: var(--bg2); }
+.lm-svc-name     { font-size: 12px; font-weight: 500; color: var(--text); }
+.lm-svc-provider { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.lm-svc-status   { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); }
+.lm-uptime       { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-top: 8px; }
+.lm-uptime-row   { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid var(--border); }
+.lm-uptime-row:last-child { border-bottom: none; }
