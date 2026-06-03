@@ -4,7 +4,7 @@ import './AuthPage.css';
 
 const DEMO = { email: 'support@caportal.co', password: 'demo1234', name: 'Rahul Mishra', role: 'CA · Bengaluru' };
 
-export default function AuthPage({ onLogin, defaultTab = 'signin' }) {
+export default function AuthPage({ onLogin, defaultTab = 'signin', onBack }) {
   const [tab, setTab] = useState(defaultTab);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
@@ -102,6 +102,13 @@ export default function AuthPage({ onLogin, defaultTab = 'signin' }) {
   return (
     <div className="auth-root">
       <div className="auth-card">
+        <div className="auth-top-bar">
+          {onBack && (
+            <button className="auth-back-btn" onClick={onBack}>
+              ← caportal.co
+            </button>
+          )}
+        </div>
         <div className="auth-logo">
           <div className="auth-logo-box">CA</div>
           CAPortal

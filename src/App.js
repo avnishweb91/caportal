@@ -145,7 +145,7 @@ export default function App() {
 
   // ── Auth gate ─────────────────────────────────────────────────────────────
   if (screen === 'auth' || (!user && screen !== 'landing')) {
-    return <AuthPage onLogin={handleLogin} defaultTab={authTab} />;
+    return <AuthPage onLogin={handleLogin} defaultTab={authTab} onBack={() => setScreen('landing')} />;
   }
 
   const liveClient = selectedClient
