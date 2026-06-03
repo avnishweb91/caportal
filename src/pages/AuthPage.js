@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { supabaseSignIn, supabaseSignUp, isSupabaseReady } from '../lib/supabase';
 import './AuthPage.css';
 
-const DEMO = { email: 'demo@caportal.in', password: 'demo1234', name: 'Rahul Mishra', role: 'CA · Bengaluru' };
+const DEMO = { email: 'support@caportal.co', password: 'demo1234', name: 'Rahul Mishra', role: 'CA · Bengaluru' };
 
 export default function AuthPage({ onLogin, defaultTab = 'signin' }) {
   const [tab, setTab] = useState(defaultTab);
@@ -18,11 +19,21 @@ export default function AuthPage({ onLogin, defaultTab = 'signin' }) {
     if (Object.keys(e).length) { setErrors(e); return; }
 
     setLoading(true);
-    await delay(700);
 
+    // Demo shortcut
     if (form.email === DEMO.email && form.password === DEMO.password) {
       return commit(DEMO);
     }
+
+    if (isSupabaseReady()) {
+      // Real auth via Supabase
+      const { data, error } = await supabaseSignIn(form.email, form.password);
+      if (error) { setErrors({ general: error.message }); setLoading(false); return; }
+      const user = data.user;
+      return commit({ email: user.email, name: user.user_metadata?.name || user.email.split('@')[0], id: user.id });
+    }
+
+    // Fallback: localStorage auth
     const users = getUsers();
     const user = users.find(u => u.email === form.email && u.password === form.password);
     if (user) return commit(user);
@@ -41,8 +52,23 @@ export default function AuthPage({ onLogin, defaultTab = 'signin' }) {
     if (Object.keys(e).length) { setErrors(e); return; }
 
     setLoading(true);
-    await delay(700);
 
+    if (isSupabaseReady()) {
+      // Real sign-up via Supabase
+      const { data, error } = await supabaseSignUp(form.email, form.password, form.name.trim());
+      if (error) { setErrors({ general: error.message }); setLoading(false); return; }
+      if (data.user && !data.session) {
+        // Email confirmation required
+        setErrors({ general: '✓ Check your email to confirm your account, then sign in.' });
+        setLoading(false);
+        setTab('signin');
+        return;
+      }
+      const user = data.user;
+      return commit({ email: user.email, name: form.name.trim(), id: user.id });
+    }
+
+    // Fallback: localStorage auth
     const users = getUsers();
     if (users.find(u => u.email === form.email)) {
       setErrors({ email: 'Account already exists — sign in instead' });
