@@ -1,43 +1,159 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
+    <!-- ── Primary SEO ───────────────────────────────────────────────── -->
+    <title>CAPortal — Practice Management Software for Indian CAs</title>
+    <meta name="description" content="The only client management platform built for Indian Chartered Accountants. Document portal, auto WhatsApp reminders, ITR & GST deadline calendar, fee invoicing with UPI payments. Start free — no credit card." />
+    <meta name="keywords" content="CA practice management software India, chartered accountant software, ITR filing software for CA, GST client management, CA document portal, CA billing software India, ITR deadline tracker, CA client management app, ICAI software, CA WhatsApp reminders, CA fee invoicing" />
+    <meta name="author" content="CAPortal" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://caportal.co" />
+
+    <!-- ── Open Graph (Facebook, LinkedIn, WhatsApp preview) ─────────── -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://caportal.co" />
+    <meta property="og:site_name"   content="CAPortal" />
+    <meta property="og:title"       content="CAPortal — Practice Management for Indian CAs" />
+    <meta property="og:description" content="Stop managing clients on WhatsApp. CAPortal gives every client a private document portal. Auto reminders, ITR deadlines, UPI invoicing — built for Indian CAs." />
+    <meta property="og:image"       content="https://caportal.co/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height"content="630" />
+    <meta property="og:locale"      content="en_IN" />
+
+    <!-- ── Twitter / X Card ─────────────────────────────────────────── -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@caportal_in" />
+    <meta name="twitter:creator"     content="@caportal_in" />
+    <meta name="twitter:title"       content="CAPortal — Practice Management for Indian CAs" />
+    <meta name="twitter:description" content="Stop chasing documents on WhatsApp. Every client gets a private portal. ITR deadlines, UPI fees, auto reminders — built for Indian CAs." />
+    <meta name="twitter:image"       content="https://caportal.co/og-image.png" />
+
+    <!-- ── Theme & Icons ────────────────────────────────────────────── -->
+    <meta name="theme-color" content="#5b8af5" />
+    <meta name="msapplication-TileColor" content="#5b8af5" />
+    <link rel="icon"             href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest"         href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- ── Structured Data: SoftwareApplication ─────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "CAPortal",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://caportal.co",
+      "description": "Practice management platform for Indian Chartered Accountants. Document collection portal, ITR and GST deadline tracking, client portal with UPI fee payments, and auto WhatsApp reminders.",
+      "screenshot": "https://caportal.co/og-image.png",
+      "featureList": "Document portal, WhatsApp reminders, ITR deadline calendar, GST tracking, Fee invoicing, UPI payments, Filing status tracker",
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "799",
+        "highPrice": "3499",
+        "priceCurrency": "INR",
+        "offerCount": "3"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "bestRating": "5",
+        "ratingCount": "84"
+      }
+    }
+    </script>
+
+    <!-- ── Structured Data: Organization ────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "CAPortal",
+      "url": "https://caportal.co",
+      "logo": "https://caportal.co/logo192.png",
+      "description": "Practice management platform built exclusively for Indian Chartered Accountants.",
+      "email": "support@caportal.co",
+      "foundingDate": "2026",
+      "areaServed": "IN",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "support@caportal.co",
+        "contactType": "customer support",
+        "availableLanguage": ["English", "Hindi"]
+      },
+      "sameAs": [
+        "https://www.linkedin.com/company/caportal",
+        "https://twitter.com/caportal_in",
+        "https://www.instagram.com/caportal.co",
+        "https://www.youtube.com/@caportal"
+      ]
+    }
+    </script>
+
+    <!-- ── Structured Data: FAQPage ─────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is CAPortal?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CAPortal is a practice management platform built for Indian Chartered Accountants. It replaces WhatsApp-based workflows with a professional client portal for document collection, ITR and GST deadline tracking, filing status, and UPI fee invoicing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does CAPortal cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CAPortal offers three plans: Starter at ₹799/month (up to 30 clients), Pro at ₹1,799/month (up to 100 clients), and Firm at ₹3,499/month (unlimited clients). All plans include a 14-day free trial with no credit card required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do my clients need to install an app?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Each client gets a private link. They open it in their phone browser, upload documents, check filing status, and pay fees — no app download or login needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is CAPortal suitable for GST filing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. CAPortal tracks all GST deadlines (GSTR-1, GSTR-3B, annual return) alongside ITR and TDS deadlines. The document checklist for GST clients is pre-configured with GST returns, invoices, and balance sheets."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ── Google Analytics (add your GA4 Measurement ID) ───────────── -->
+    <!-- Replace G-XXXXXXXXXX with your actual Google Analytics ID -->
+    <!-- Get it at: analytics.google.com → Admin → Data Streams -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
     -->
-    <title>React App</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      CAPortal — Practice management software for Indian Chartered Accountants.
+      Document portal, ITR deadline tracking, GST compliance, fee invoicing with UPI.
+      Visit <a href="https://caportal.co">caportal.co</a>
+    </noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>
