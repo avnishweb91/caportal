@@ -1,93 +1,82 @@
-# CAPortal — CA Client Management SaaS
+# CAPortal — Practice Management SaaS for Indian CAs
 
-> Production-ready React MVP for a SaaS product built for Indian Chartered Accountants.  
-> Replaces WhatsApp-based client workflows with a professional dark-themed portal.
-
----
-
-## What This Project Is
-
-CAPortal was designed and built from scratch as a validated SaaS idea for the Indian market.
-
-**The problem**: Every CA in India manages 50–200 clients over WhatsApp and Excel. Documents get lost, deadlines get missed, clients call to ask "when will my ITR be filed?" dozens of times a season.
-
-**The solution**: A dedicated client workspace — document collection, ITR/GST deadline tracking, filing status management, and fee invoicing — in one place.
-
-**The gap we fill**: Western tools (Broadly, Birdeye, Reputation.com) are $300–500/month, English-only, built for US workflows. Indian tools are basic templates with no AI. We sit exactly in that gap — India-first, WhatsApp-native, affordable.
+> Live at **[caportal.co](https://caportal.co)**  
+> React 19 · Supabase · Razorpay · Dark theme · No UI framework
 
 ---
 
-## Design System
+## What It Is
 
-| Token | Value | Used for |
+CAPortal replaces the WhatsApp + Excel workflow every Indian CA uses to manage clients. Each client gets a private portal link — they upload documents, check filing status, and pay fees. The CA sees everything in one dashboard.
+
+**The problem it solves:** Every CA in India manages 50–200 clients over WhatsApp. Documents get lost. Deadlines get missed. Clients call every week asking "when will my ITR be filed?"
+
+**Who it's for:** Individual CAs and small CA firms across India — Tier 1 cities first.
+
+**Pricing:** ₹799 Starter → ₹1,799 Pro → ₹3,499 Firm · 14-day free trial
+
+---
+
+## What's Built
+
+### CA-facing screens
+| Screen | File | Description |
 |---|---|---|
-| `--bg` | `#0a0a0a` | Page background |
-| `--bg1` | `#111111` | Cards, sidebars, navbars |
-| `--bg2` | `#1a1a1a` | Hover states, table rows |
-| `--bg3` | `#222222` | Active states, inputs |
-| `--accent` | `#5b8af5` | Primary actions, links |
-| `--green` | `#3dd68c` | Success, filed status |
-| `--amber` | `#f5a623` | Warnings, pending |
-| `--red` | `#f56565` | Errors, missing docs |
-| `--purple` | `#a78bfa` | Secondary accent |
-| `--font` | Geist | All UI text |
-| `--mono` | IBM Plex Mono | Numbers, PANs, dates, codes |
+| Landing | `src/pages/Landing.js` | Marketing page — hero, features, pricing, social proof |
+| Auth | `src/pages/AuthPage.js` | Sign in / sign up with Supabase auth + demo account |
+| Dashboard | `src/pages/Dashboard.js` | Client list, search, filter, bulk remind, export CSV |
+| Client Detail | `src/pages/ClientDetail.js` | Full client view — docs, timeline, status, invoice PDF |
+| Invoices | `src/pages/InvoicesPage.js` | All fees — mark paid, collect via UPI |
+| Documents | `src/pages/DocumentsPage.js` | All documents across all clients |
+| Deadlines | `src/pages/DeadlinesPage.js` | ITR, GST, TDS deadlines with urgency badges |
+| Reminders | `src/pages/RemindersPage.js` | WhatsApp reminder log + compose |
+| Settings | `src/pages/SettingsPage.js` | Profile, Billing, Integrations (UPI ID) |
+| Plan Select | `src/pages/PlanSelectPage.js` | Subscription wall shown when trial expires |
 
-All tokens are defined in `src/index.css` as CSS custom properties.
-To change the accent color across the entire app, change `--accent` in one place.
+### Client-facing screen
+| Screen | File | Description |
+|---|---|---|
+| Client Portal | `src/pages/ClientPortal.js` | Mobile-first portal — docs, status, messaging, UPI payment |
+
+Accessible via unique link: `caportal.co/?portal=TOKEN`
 
 ---
 
-## Screens
+## Key Features
 
-### 1. Landing page (`src/pages/Landing.js`)
-Marketing page for CAs to sign up.
+**Client portal magic link**
+Every client gets a unique URL. CA copies it from Client Detail and sends via WhatsApp. Client opens it on phone — no app, no login. Uploads documents, pays fees, messages CA.
 
-**Sections:**
-- Sticky navbar with sign in / start trial CTAs
-- Hero with strikethrough typography (`Stop running your practice on ~~WhatsApp~~`)
-- Stats bar: 4L+ CAs, ₹0 WhatsApp chasing, 2h saved/day, 47d to deadline
-- 6-feature grid with colour-coded category tags
-- 3-tier pricing table (Starter ₹799, Pro ₹1,799, Firm ₹3,499)
-- CTA section with radial glow background
-- Footer with links
+**Subscription billing**
+- 14-day free trial → plan selection wall → Razorpay checkout
+- Webhook via Supabase Edge Function verifies payment and activates plan in database
+- CA subscription payments go to developer's Razorpay account
 
-### 2. CA Dashboard (`src/pages/Dashboard.js`)
-Daily command center for the CA.
+**UPI payments for client fees**
+CA enters their UPI ID in Settings → Integrations. When client opens portal → "Pay ₹X" button opens GPay/PhonePe/Paytm on phone, or shows QR code on desktop. Money goes directly to CA's bank account via NPCI. No API keys needed for CA.
 
-**Sections:**
-- Toolbar with breadcrumb + season countdown + bulk action buttons
-- 4-tile metrics strip: Total clients, Filed, Docs missing, Fees pending
-- Client table with: checkboxes (bulk select), name+PAN, filing type, doc progress bar, status pill, action buttons
-- Right panel: Upcoming deadlines with urgency badges, recent activity feed
-- Season progress bar with gradient fill
+**Real file upload**
+Client taps upload zone → file picker opens → PDF/JPG/PNG selected → document marked received on CA's dashboard.
 
-**Interactive:**
-- Search clients by name or PAN (live filter)
-- Checkbox multi-select for bulk reminders/export
-- Click any row → navigates to Client Detail
+**Invoice PDF**
+Client Detail → "Download invoice" → professional invoice opens in new tab → save as PDF. Shows CA firm name, client details, fee, payment status.
 
-### 3. Client Detail (`src/pages/ClientDetail.js`)
-Full view for a single client.
+---
 
-**Sections:**
-- Header bar with back button + Edit / Archive / Mark as filed actions
-- Hero: client name, PAN, phone, email, status chips, fee chip
-- 4-tile info row: Filing type, Fee amount (paid/unpaid), Docs count, Plan
-- Document checklist card: each doc with upload status icon, date, action
-- Activity timeline card: colour-coded dots, timestamps in monospace
-- Pinned bottom action bar: Send WhatsApp, Create invoice, Resend portal link, Download docs, Flag issue
+## Tech Stack
 
-### 4. Client Portal (`src/pages/ClientPortal.js`)
-Mobile-first portal that the CA's clients see.
-
-**Tabs:**
-- **Home**: Document checklist + upload zone (tap to upload, shows success toast)
-- **Docs**: All uploaded files with dates
-- **Status**: Step-by-step filing progress tracker
-- **Message**: Live chat UI with CA (functional — type and send messages)
-
-**Desktop context panel**: Shows client info summary + explanation note beside the phone mockup.
+| Layer | Choice | Notes |
+|---|---|---|
+| Frontend | React 19 | No Router — single `screen` state in App.js |
+| Styling | CSS custom properties | Dark theme, Geist + IBM Plex Mono |
+| Database + Auth | Supabase (PostgreSQL) | Row Level Security on all tables |
+| File storage | Supabase Storage | Ready to connect |
+| CA subscription payments | Razorpay | Developer's account — CA pays ₹799/₹1,799/₹3,499 |
+| Client fee payments | UPI direct | CA's UPI ID — zero commission, instant to CA's bank |
+| Webhook | Supabase Edge Functions | `supabase/functions/razorpay-webhook/index.ts` |
+| Email | Resend | Platform-handled, noreply@caportal.co |
+| WhatsApp | Gupshup | Platform-handled, key pending |
+| Hosting | Vercel | Auto-deploys on push to `develop` |
 
 ---
 
@@ -96,163 +85,166 @@ Mobile-first portal that the CA's clients see.
 ```
 caportal/
 ├── public/
-│   └── index.html
+│   ├── index.html          # SEO: meta, OG, Twitter cards, JSON-LD schema
+│   ├── favicon.svg         # Branded CA favicon
+│   ├── og-image.png        # Social sharing preview (1200×630)
+│   ├── sitemap.xml
+│   └── robots.txt
+│
 ├── src/
-│   ├── App.js              # Root: screen state, routing, layout
-│   ├── App.css             # App shell layout
-│   ├── index.js            # React entry point
-│   ├── index.css           # Global CSS variables, base styles, shared classes
+│   ├── App.js              # Root: screen state, auth gate, billing gate, routing
 │   │
 │   ├── components/
-│   │   ├── Navbar.js       # Top bar — logo, screen tabs, status dot, avatar
-│   │   ├── Navbar.css
-│   │   ├── Sidebar.js      # Left nav — workspace items, plan indicator, profile
-│   │   └── Sidebar.css
+│   │   ├── Navbar.js/css   # Top bar — logo, hamburger, user menu, logout
+│   │   ├── Sidebar.js/css  # Left nav — live counts, mobile overlay
+│   │   ├── ClientFormModal # Add / edit client form with PAN validation
+│   │   └── ClientFormModal.css
 │   │
 │   ├── pages/
-│   │   ├── Landing.js      # Marketing landing page
-│   │   ├── Landing.css
-│   │   ├── Dashboard.js    # CA dashboard
-│   │   ├── Dashboard.css
-│   │   ├── ClientDetail.js # Single client view
-│   │   ├── ClientDetail.css
-│   │   ├── ClientPortal.js # Client-facing mobile portal
-│   │   └── ClientPortal.css
+│   │   ├── Landing.js/css      # Marketing + modals (About, Blog, Privacy, Terms, Support, Status)
+│   │   ├── AuthPage.js/css     # Sign in / sign up — Supabase + localStorage fallback
+│   │   ├── Dashboard.js/css    # CA dashboard + trial warning banner + empty state
+│   │   ├── ClientDetail.js/css # Single client — status dropdown, fee toggle, docs, timeline
+│   │   ├── ClientPortal.js/css # Client portal — UPI payment, real file upload, messaging
+│   │   ├── InvoicesPage.js/css # Fee management
+│   │   ├── DocumentsPage.js    # All documents view
+│   │   ├── DeadlinesPage.js    # Deadline tracker with add/remove
+│   │   ├── RemindersPage.js    # WhatsApp reminder log + compose
+│   │   ├── SettingsPage.js/css # Profile, Billing, Integrations, Data
+│   │   └── PlanSelectPage.js/css # Subscription wall
+│   │
+│   ├── lib/
+│   │   ├── billing.js      # Trial logic, plan storage, Supabase sync, Razorpay payment
+│   │   ├── razorpay.js     # Razorpay checkout wrapper
+│   │   ├── supabase.js     # Supabase client + auth helpers
+│   │   ├── invoice.js      # PDF invoice generator (window.print)
+│   │   └── utils.js        # Token generation, UPI links, clipboard, profile helpers
 │   │
 │   └── data/
-│       └── mockData.js     # All mock data — replace with API calls
+│       └── mockData.js     # Seed clients, deadlines, reminders, doc templates
 │
-├── package.json
-└── README.md               ← you are here
+├── supabase/
+│   └── functions/
+│       └── razorpay-webhook/
+│           └── index.ts    # Edge Function: verify signature → activate plan
+│
+├── supabase-schema.sql     # Full DB schema — run in Supabase SQL Editor
+├── .env.example            # Template for all environment variables
+└── readme.md
 ```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+# Razorpay — developer's account (CA subscription payments)
+REACT_APP_RAZORPAY_KEY=rzp_live_XXXXXXXXXX
+
+# Supabase — database + auth
+REACT_APP_SUPABASE_URL=https://your-ref.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=eyJ...
+
+# Email (Resend) — platform-handled, CA doesn't see this
+REACT_APP_RESEND_KEY=re_XXXXXXXXXX
+
+# WhatsApp (Gupshup) — platform-handled, CA doesn't see this
+REACT_APP_GUPSHUP_KEY=XXXXXXXXXX
+```
+
+Also set in **Vercel → Settings → Environment Variables** for production.
 
 ---
 
 ## Getting Started
 
-### Requirements
-- Node.js 18+
-- npm 9+
-
-### Run locally
 ```bash
-# Install dependencies
+# Install
 npm install
 
-# Start dev server
-npm start
-# Opens at http://localhost:3000
-```
+# Run locally
+npm start        # http://localhost:3000
 
-### Build for production
-```bash
+# Build
 npm run build
-# Output in /build — deploy to Vercel, Netlify, or any static host
 ```
 
-### Deploy to Vercel (1 command)
+Demo login: `support@caportal.co` / `demo1234`
+
+---
+
+## Database Setup
+
+1. Go to **supabase.com** → your project → SQL Editor
+2. Paste contents of `supabase-schema.sql` → Run
+3. Safe to re-run — uses `IF NOT EXISTS` and `OR REPLACE` throughout
+
+---
+
+## Webhook Setup (Razorpay → Supabase)
+
 ```bash
-npm install -g vercel
-vercel --prod
+# Deploy Edge Function
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=your_secret
+npx supabase functions deploy razorpay-webhook --no-verify-jwt
+```
+
+Register in Razorpay → Settings → Webhooks:
+- URL: `https://YOUR_REF.supabase.co/functions/v1/razorpay-webhook`
+- Event: `payment.captured` only
+
+---
+
+## Payment Flow
+
+**CA subscribes to CAPortal (money → developer)**
+```
+CA selects plan → Razorpay checkout → payment.captured
+→ Browser activates plan in localStorage + Supabase immediately
+→ Webhook (backup) verifies and activates in Supabase
+→ Money lands in developer's Razorpay account
+```
+
+**Client pays CA's fee (money → CA)**
+```
+Client opens portal link → taps "Pay ₹X"
+→ Mobile: opens GPay/PhonePe/Paytm with UPI deep link
+→ Desktop: QR code popup to scan
+→ Money goes directly to CA's bank via NPCI/UPI
+→ No platform commission
 ```
 
 ---
 
-## Routing
+## Design System
 
-No React Router — navigation uses a single `screen` state in `App.js`.
+All tokens in `src/index.css`:
 
-```js
-// App.js — current routing logic
-const [screen, setScreen] = useState('landing');
-
-{screen === 'landing'   && <Landing />}
-{screen === 'dashboard' && <Dashboard />}
-{screen === 'detail'    && <ClientDetail client={selectedClient} />}
-{screen === 'portal'    && <ClientPortal />}
-```
-
-When the app grows beyond 6 screens, add `react-router-dom` and convert each screen to a route.
-
----
-
-## Mock Data
-
-All data lives in `src/data/mockData.js`. Each client object shape:
-
-```js
-{
-  id: 1,
-  name: "Priya Sharma",
-  pan: "ABCPS1234D",
-  phone: "+91 98765 43210",
-  email: "priya@example.com",
-  type: "Individual ITR",         // filing type
-  plan: "Pro",                     // subscription tier
-  status: "under_review",         // filed | under_review | docs_pending | waiting_docs
-  docsReceived: 4,
-  docsTotal: 5,
-  feeAmount: 3500,
-  feePaid: false,
-  documents: [
-    { name: "Form 16", uploaded: true, date: "Jun 1" },
-    { name: "Rent receipts", uploaded: false, date: null },
-  ],
-  timeline: [
-    { action: "CA started review", time: "Today, 10:32 am", type: "blue" },
-  ],
-}
-```
-
-When you connect a real backend, replace the `import { clients } from '../data/mockData'` in Dashboard and ClientDetail with API calls. Component interfaces stay the same.
-
----
-
-## Shared CSS Classes (index.css)
-
-```css
-/* Buttons */
-.btn .btn-primary .btn-ghost .btn-danger .btn-sm .btn-lg .btn-icon
-
-/* Status pills */
-.pill .pill-green .pill-amber .pill-red .pill-blue .pill-purple .pill-gray
-
-/* Input */
-.input  /* dark styled input, focus ring on accent */
-
-/* Card */
-.card   /* bg1 background + border + border-radius */
-```
-
-Use these everywhere — don't create one-off button or pill styles in component CSS files.
-
----
-
-## Planned Backend Stack (Phase 2)
-
-| Layer | Choice | Reason |
+| Token | Value | Used for |
 |---|---|---|
-| Database + Auth | Supabase (PostgreSQL) | Auth + DB + file storage in one, free tier covers MVP |
-| File storage | Supabase Storage | Secure, handles PDFs and images, integrates with auth |
-| WhatsApp API | Gupshup | India-first, cheaper than Twilio, WhatsApp Business API |
-| Payments | Razorpay | Best India gateway — UPI, cards, subscriptions |
-| Email | Resend | Simple API, great deliverability |
-| Hosting | Vercel | One-command deploys, free SSL |
+| `--bg` | `#0a0a0a` | Page background |
+| `--bg1` | `#111111` | Cards, sidebars |
+| `--accent` | `#5b8af5` | Primary actions, links |
+| `--green` | `#3dd68c` | Success, filed status |
+| `--amber` | `#f5a623` | Warnings, pending |
+| `--red` | `#f56565` | Errors, missing docs |
+| `--font` | Geist | All UI text |
+| `--mono` | IBM Plex Mono | Numbers, PANs, dates |
 
 ---
 
-## Phase 2 Features (not yet built)
+## Roadmap
 
-These were designed but deferred until first 50 paying customers:
-
-- **WhatsApp auto-reminders** — Gupshup API sends document reminders on a schedule
-- **Draft return approval** — CA uploads PDF draft, client approves with one tap
-- **UPI invoice + payment** — Razorpay inside portal, full payment tracking
-- **Multilingual client portal** — Hindi, Kannada, Tamil, Telugu (key India moat)
-- **Multi-CA firm accounts** — role-based access for firm staff
-- **Custom branding** — white-label with CA firm logo and colours
-- **Practice analytics** — monthly filings, revenue charts, busy period heatmap
-- **Bulk WhatsApp campaigns** — send season-start messages to all clients at once
+- [ ] Gupshup WhatsApp key → auto-reminders go live
+- [ ] Supabase real-time → CA sees document uploads instantly
+- [ ] Multilingual client portal — Hindi, Tamil, Telugu, Kannada
+- [ ] Draft return approval — CA uploads PDF, client approves with one tap
+- [ ] Multi-CA firm accounts — role-based access for staff
+- [ ] Practice analytics — revenue charts, season heatmap
+- [ ] Custom branding — white-label with CA firm logo
 
 ---
 
@@ -260,26 +252,13 @@ These were designed but deferred until first 50 paying customers:
 
 | Item | Detail |
 |---|---|
-| Target customer | Individual CAs + small CA firms, Tier 1 Indian cities |
-| Primary pain | Managing 50–200 clients on WhatsApp — lost docs, missed deadlines |
-| Peak window | ITR season June–August — highest pain, highest conversion |
-| Acquisition | ICAI chapters, CA WhatsApp groups, LinkedIn — word of mouth |
-| Pricing | ₹799 Starter → ₹1,799 Pro → ₹3,499 Firm |
-| 2-year MRR target | ₹2.2L/month (100 Starter + 50 Pro + 15 Firm) |
-| Moat | India-first, WhatsApp-native, multilingual — Western tools won't build this |
+| Live URL | caportal.co |
+| Target | Individual CAs + small CA firms, Tier 1 Indian cities |
+| Peak window | ITR season June–August |
+| Pricing | ₹799 → ₹1,799 → ₹3,499/month |
+| MRR target | ₹2.2L/month (100 Starter + 50 Pro + 15 Firm) |
+| Moat | India-first, UPI-native, WhatsApp workflow — Western tools won't build this |
 
 ---
 
-## Roadmap — Next Steps
-
-- *"Add Supabase backend — auth, database schema, and file upload"*
-- *"Add React Router and build a dedicated Invoices page"*
-- *"Integrate Gupshup WhatsApp API for document reminders"*
-- *"Build the Razorpay invoice + payment flow inside the client portal"*
-- *"Add Hindi and Kannada language support to the client portal"*
-- *"Build multi-CA firm accounts with role-based access"*
-
----
-
-*React 19 · Geist + IBM Plex Mono · Dark theme · CSS custom properties · No UI framework*  
-*Version 2 — full dark UI rebuild (Linear/Vercel aesthetic)*
+*React 19 · Supabase · Razorpay · UPI · Vercel · Dark theme*
