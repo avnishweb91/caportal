@@ -14,7 +14,7 @@ import SettingsPage from './pages/SettingsPage';
 import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
-import { getBillingStatus, ensureTrialStart } from './lib/billing';
+import { getBillingStatus, ensureTrialStart, syncPlanFromSupabase } from './lib/billing';
 import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
@@ -60,6 +60,7 @@ export default function App() {
   const handleLogin = (u) => {
     setUser(u);
     ensureTrialStart(u);
+    syncPlanFromSupabase(); // pull latest plan from Supabase (async, no-wait)
     setScreen('dashboard');
     setSidebarTab('dashboard');
   };

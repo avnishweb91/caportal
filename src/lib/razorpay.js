@@ -8,7 +8,7 @@ const loadScript = () =>
     document.body.appendChild(s);
   });
 
-export async function openPayment({ amount, clientName, clientEmail = '', clientPhone = '', description, onSuccess, onDismiss }) {
+export async function openPayment({ amount, clientName, clientEmail = '', clientPhone = '', description, notes = {}, onSuccess, onDismiss }) {
   const loaded = await loadScript();
   if (!loaded) {
     alert('Could not load Razorpay. Check your internet connection.');
@@ -30,6 +30,7 @@ export async function openPayment({ amount, clientName, clientEmail = '', client
     description,
     image: '',
     prefill: { name: clientName, email: clientEmail, contact: clientPhone },
+    notes,
     theme: { color: '#5b8af5' },
     handler(response) {
       onSuccess?.({

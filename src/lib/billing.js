@@ -1,4 +1,5 @@
 import { openPayment } from './razorpay';
+import { supabase } from './supabase';
 
 export const PLANS = {
   starter: {
@@ -119,18 +120,66 @@ export const cancelPlan = () => {
   saveBillingData(rest);
 };
 
+// ── Sync plan from Supabase → localStorage (called on login) ─────────────
+export const syncPlanFromSupabase = async () => {
+  if (!supabase) return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('plan, plan_expiry, trial_start')
+      .eq('id', user.id)
+      .single();
+    if (!data) return;
+
+    const stored = getBillingData();
+    // Supabase is source of truth — overwrite localStorage
+    saveBillingData({
+      ...stored,
+      ...(data.trial_start ? { trialStart: data.trial_start } : {}),
+      ...(data.plan && data.plan !== 'trial' ? {
+        plan:        data.plan,
+        planExpiry:  data.plan_expiry,
+      } : {}),
+    });
+  } catch (e) {
+    console.warn('Could not sync plan from Supabase:', e.message);
+  }
+};
+
+// ── Push plan activation to Supabase (after client-side payment success) ──
+const pushPlanToSupabase = async (planId, expiry) => {
+  if (!supabase) return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('profiles').update({
+      plan:        planId,
+      plan_expiry: expiry,
+    }).eq('id', user.id);
+  } catch (e) {
+    console.warn('Could not push plan to Supabase:', e.message);
+  }
+};
+
 // ── Payment flow ─────────────────────────────────────────────────────────
 export const payForPlan = async (planId, caName, caEmail, onSuccess, onDismiss) => {
   const plan = PLANS[planId];
   if (!plan) return;
 
   await openPayment({
-    amount: plan.price,
-    clientName: caName || 'CAPortal User',
-    clientEmail: caEmail || '',
-    description: `CAPortal ${plan.name} Plan — Monthly Subscription`,
+    amount:       plan.price,
+    clientName:   caName  || 'CAPortal User',
+    clientEmail:  caEmail || '',
+    description:  `CAPortal ${plan.name} Plan — Monthly Subscription`,
+    notes: { planId, caEmail: caEmail || '' }, // webhook reads these
     onSuccess: (resp) => {
       activatePlan(planId, resp.paymentId, plan.price);
+      // Also push to Supabase immediately (webhook is backup)
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30);
+      pushPlanToSupabase(planId, expiry.toISOString());
       onSuccess?.(planId, resp);
     },
     onDismiss,
