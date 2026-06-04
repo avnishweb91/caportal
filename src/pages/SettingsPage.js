@@ -24,20 +24,16 @@ export default function SettingsPage({ user, setUser, showToast }) {
   });
 
   const [keys, setKeys] = useState({
-    upiId:       savedSettings.upiId       || '',
-    upiName:     savedSettings.upiName     || '',
-    gupshupKey:  savedSettings.gupshupKey  || '',
-    resendKey:   savedSettings.resendKey   || '',
+    upiId:   savedSettings.upiId   || '',
+    upiName: savedSettings.upiName || '',
   });
 
-  const [showKeys, setShowKeys] = useState({});
   const [tab, setTab] = useState('profile');
   const [payingPlan, setPayingPlan] = useState(null);
   const billing = getBillingStatus();
 
   const setP = (k, v) => setProfile(p => ({ ...p, [k]: v }));
   const setK = (k, v) => setKeys(k2 => ({ ...k2, [k]: v }));
-  const toggleShow = (k) => setShowKeys(s => ({ ...s, [k]: !s[k] }));
 
   const saveProfile = () => {
     const extra = { firm: profile.firm, city: profile.city, phone: profile.phone };
@@ -176,61 +172,37 @@ export default function SettingsPage({ user, setUser, showToast }) {
                 )}
               </div>
 
-              {/* WhatsApp */}
+              {/* WhatsApp — platform handled */}
               <div className="int-card">
                 <div className="int-header">
                   <div className="int-logo int-whatsapp">💬</div>
-                  <div>
-                    <div className="int-name">WhatsApp Reminders <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></div>
-                    <div className="int-desc">Auto-send document reminders via WhatsApp. India-first, ₹0.35/message. gupshup.io</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="int-name">WhatsApp Reminders</div>
+                    <div className="int-desc">
+                      Auto-send document reminders to your clients via WhatsApp. Handled by CAPortal — no setup needed.
+                    </div>
                   </div>
-                  <span className={`pill ${keys.gupshupKey ? 'pill-green' : 'pill-gray'}`}>
-                    {keys.gupshupKey ? 'Connected' : 'Optional'}
-                  </span>
-                </div>
-                <div className="form-group" style={{ marginTop: 12 }}>
-                  <label className="form-label">Gupshup API Key</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input className="input" style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 11 }}
-                      type={showKeys.gupshup ? 'text' : 'password'}
-                      placeholder="Get from gupshup.io → API Access"
-                      value={keys.gupshupKey} onChange={e => setK('gupshupKey', e.target.value)} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => toggleShow('gupshup')}>
-                      {showKeys.gupshup ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
+                  <span className="pill pill-green">✓ Included</span>
                 </div>
               </div>
 
-              {/* Email */}
+              {/* Email — platform handled */}
               <div className="int-card">
                 <div className="int-header">
                   <div className="int-logo int-email">✉</div>
-                  <div>
-                    <div className="int-name">Email Notifications <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></div>
-                    <div className="int-desc">Email clients when ITR is filed or documents are needed. resend.com — free up to 3,000/month</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="int-name">Email Notifications</div>
+                    <div className="int-desc">
+                      Clients get emails when their ITR is filed or documents are needed. Sent from noreply@caportal.co — no setup needed.
+                    </div>
                   </div>
-                  <span className={`pill ${keys.resendKey ? 'pill-green' : 'pill-gray'}`}>
-                    {keys.resendKey ? 'Connected' : 'Optional'}
-                  </span>
-                </div>
-                <div className="form-group" style={{ marginTop: 12 }}>
-                  <label className="form-label">Resend API Key</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input className="input" style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 11 }}
-                      type={showKeys.resend ? 'text' : 'password'}
-                      placeholder="Get from resend.com → API Keys"
-                      value={keys.resendKey} onChange={e => setK('resendKey', e.target.value)} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => toggleShow('resend')}>
-                      {showKeys.resend ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
+                  <span className="pill pill-green">✓ Included</span>
                 </div>
               </div>
 
               <button className="btn btn-primary" onClick={saveKeys}>Save settings</button>
               <div className="settings-note">
-                UPI ID is required for clients to pay your fees. WhatsApp and Email keys are optional — you can add them later.
+                Only your UPI ID is needed. WhatsApp reminders and email notifications are handled by CAPortal and included in your plan.
               </div>
             </div>
           )}
