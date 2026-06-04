@@ -14,6 +14,8 @@ import SettingsPage from './pages/SettingsPage';
 import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
+import { getBillingStatus, ensureTrialStart } from './lib/billing';
+import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
 const getStoredClients = () => {
@@ -56,7 +58,10 @@ export default function App() {
   };
 
   const handleLogin = (u) => {
-    setUser(u); setScreen('dashboard'); setSidebarTab('dashboard');
+    setUser(u);
+    ensureTrialStart(u);
+    setScreen('dashboard');
+    setSidebarTab('dashboard');
   };
   const handleLogout = () => {
     localStorage.removeItem('ca_auth'); setUser(null); setScreen('landing');
@@ -122,6 +127,22 @@ export default function App() {
       ],
     });
   };
+
+  // ── Billing gate ──────────────────────────────────────────────────────
+  const billing = user ? getBillingStatus() : null;
+
+  if (billing?.isHardBlocked && !['portal', 'auth', 'landing'].includes(screen)) {
+    return (
+      <PlanSelectPage
+        billing={billing}
+        user={user}
+        onActivate={(planId) => {
+          showToast(`${planId.charAt(0).toUpperCase() + planId.slice(1)} plan activated — welcome! 🎉`);
+        }}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   // ── Client-facing portal (no auth needed) ────────────────────────────────
   if (portalAccessClient) {
@@ -193,6 +214,8 @@ export default function App() {
               onAddClient={() => { setEditing(null); setModalMode('add'); }}
               onUpdateClient={updateClient}
               showToast={showToast}
+              billing={billing}
+              onUpgrade={() => { setScreen('settings'); setSidebarTab('settings'); }}
             />
           )}
           {screen === 'detail' && liveClient && (

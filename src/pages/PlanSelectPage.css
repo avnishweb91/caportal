@@ -1,0 +1,109 @@
+.plan-page {
+  min-height: 100vh; background: var(--bg);
+  display: flex; flex-direction: column;
+}
+
+.plan-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px; border-bottom: 1px solid var(--border);
+  background: var(--bg1); flex-shrink: 0;
+}
+.plan-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700; color: var(--text);
+}
+.plan-logo-box {
+  width: 26px; height: 26px; background: var(--accent);
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #fff;
+}
+.plan-logout {
+  background: none; border: none; font-size: 12px;
+  color: var(--text3); cursor: pointer;
+}
+.plan-logout:hover { color: var(--text); }
+
+.plan-content {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 48px 24px;
+}
+
+.plan-header { text-align: center; margin-bottom: 40px; }
+.plan-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; margin-bottom: 16px;
+}
+.plan-badge-trial   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,214,140,0.2); }
+.plan-badge-expired { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+.plan-grace { font-size: 13px; color: var(--amber); margin-bottom: 12px; }
+.plan-title { font-size: 32px; font-weight: 800; color: var(--text); letter-spacing: -1px; margin-bottom: 8px; }
+.plan-sub   { font-size: 13px; color: var(--text3); }
+
+.plan-error {
+  background: var(--red-dim); border: 1px solid rgba(245,101,101,0.2);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 12px; color: var(--red); margin-bottom: 20px;
+}
+
+/* Plan grid */
+.plan-grid {
+  display: grid; grid-template-columns: repeat(3, 320px);
+  gap: 16px; margin-bottom: 40px;
+}
+
+.plan-card {
+  background: var(--bg1); border: 1px solid var(--border2);
+  border-radius: var(--radius-xl); padding: 24px;
+  position: relative; display: flex; flex-direction: column; gap: 4px;
+  transition: border-color 0.15s;
+}
+.plan-card:hover { border-color: var(--border2); }
+.plan-card-highlight {
+  border-color: var(--accent-border);
+  background: linear-gradient(160deg, rgba(91,138,245,0.06) 0%, var(--bg1) 60%);
+  box-shadow: 0 0 0 1px var(--accent-border), var(--shadow-lg);
+}
+.plan-popular {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 3px 14px; border-radius: 20px;
+  white-space: nowrap;
+}
+.plan-card-name   { font-size: 13px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.plan-card-price  { display: flex; align-items: baseline; gap: 2px; margin-bottom: 4px; }
+.plan-price-currency { font-size: 20px; font-weight: 700; color: var(--text); }
+.plan-price-amount   { font-size: 40px; font-weight: 800; color: var(--text); letter-spacing: -2px; font-family: var(--mono); line-height: 1; }
+.plan-price-period   { font-size: 13px; color: var(--text3); margin-left: 2px; }
+.plan-card-limit  { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+.plan-card-divider{ height: 1px; background: var(--border); margin: 14px 0; }
+.plan-card-features { display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 20px; }
+.plan-feature { display: flex; gap: 8px; font-size: 12px; color: var(--text2); align-items: flex-start; }
+.plan-check   { color: var(--green); font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+.plan-cta     { width: 100%; justify-content: center; }
+.plan-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+.plan-cta-sub { font-size: 10px; color: var(--text3); text-align: center; margin-top: 6px; }
+
+.plan-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  border-radius: 50%; animation: plan-spin 0.7s linear infinite;
+}
+@keyframes plan-spin { to { transform: rotate(360deg); } }
+
+/* Reassurance bar */
+.plan-footer { width: 100%; max-width: 960px + 48px; }
+.plan-reassurance {
+  display: flex; flex-wrap: wrap; gap: 8px 32px;
+  justify-content: center;
+  padding: 16px 0; border-top: 1px solid var(--border);
+}
+.plan-reassurance-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
+
+@media (max-width: 1060px) {
+  .plan-grid { grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 960px; }
+}
+@media (max-width: 768px) {
+  .plan-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .plan-title { font-size: 24px; }
+}

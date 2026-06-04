@@ -24,7 +24,7 @@ const statusFilters = [
   { val: 'waiting_docs',label: 'Waiting docs' },
 ];
 
-export default function Dashboard({ clients, onSelectClient, onAddClient, showToast }) {
+export default function Dashboard({ clients, onSelectClient, onAddClient, showToast, billing, onUpgrade }) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -116,6 +116,24 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
 
   return (
     <div className="dashboard">
+      {/* Trial warning banner */}
+      {billing?.isTrialing && billing.daysLeft <= 7 && billing.daysLeft > 0 && (
+        <div className={`trial-banner ${billing.daysLeft <= 3 ? 'trial-banner-urgent' : ''}`}>
+          <span>
+            ⏰ <strong>{billing.daysLeft} day{billing.daysLeft !== 1 ? 's' : ''}</strong> left in your free trial
+          </span>
+          <button className="btn btn-primary btn-sm" onClick={onUpgrade}>
+            Choose a plan →
+          </button>
+        </div>
+      )}
+      {billing?.isExpired && !billing.isHardBlocked && (
+        <div className="trial-banner trial-banner-urgent">
+          <span>⚠ Free trial ended — <strong>{billing.graceDaysLeft} grace day{billing.graceDaysLeft !== 1 ? 's' : ''}</strong> remaining</span>
+          <button className="btn btn-primary btn-sm" onClick={onUpgrade}>Subscribe now →</button>
+        </div>
+      )}
+
       <div className="dash-toolbar">
         <div className="dash-title-row">
           <span className="dash-title">Dashboard</span>

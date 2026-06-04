@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getSettings } from '../lib/utils';
+import { PLANS, getBillingStatus, payForPlan, cancelPlan } from '../lib/billing';
 import './SettingsPage.css';
 
 const getProfile = () => {
@@ -30,6 +31,8 @@ export default function SettingsPage({ user, setUser, showToast }) {
 
   const [showKeys, setShowKeys] = useState({});
   const [tab, setTab] = useState('profile');
+  const [payingPlan, setPayingPlan] = useState(null);
+  const billing = getBillingStatus();
 
   const setP = (k, v) => setProfile(p => ({ ...p, [k]: v }));
   const setK = (k, v) => setKeys(k2 => ({ ...k2, [k]: v }));
@@ -82,7 +85,7 @@ export default function SettingsPage({ user, setUser, showToast }) {
 
       <div className="settings-layout">
         <div className="settings-tabs">
-          {[['profile','Profile'],['integrations','Integrations'],['practice','Practice'],['data','Data']].map(([id, label]) => (
+          {[['profile','Profile'],['billing','Billing'],['integrations','Integrations'],['data','Data']].map(([id, label]) => (
             <button key={id} className={`stab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>
               {label}
             </button>
@@ -214,23 +217,87 @@ export default function SettingsPage({ user, setUser, showToast }) {
             </div>
           )}
 
-          {tab === 'practice' && (
+          {tab === 'billing' && (
             <div className="settings-section">
-              <div className="plan-card">
-                <div className="plan-name">Pro plan</div>
-                <div className="plan-limit">Up to 100 clients · ₹1,799/month</div>
-                <div className="plan-features">
-                  {['Document portal for all clients','WhatsApp reminders','Filing status tracker','Fee invoicing + UPI payments','Practice analytics dashboard','Priority support'].map(f => (
-                    <div key={f} className="plan-feature"><span style={{ color: 'var(--green)' }}>✓</span> {f}</div>
-                  ))}
+              <div className="settings-card">
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:3 }}>Current plan</div>
+                    <div style={{ fontSize:12, color:'var(--text3)' }}>
+                      {billing.isPaid
+                        ? `${billing.planName} · renews in ${billing.daysLeft} day${billing.daysLeft!==1?'s':''}`
+                        : billing.isExpired
+                          ? `Trial ended · ${billing.graceDaysLeft} grace day${billing.graceDaysLeft!==1?'s':''} left`
+                          : `Free trial · ${billing.daysLeft} day${billing.daysLeft!==1?'s':''} remaining`}
+                    </div>
+                  </div>
+                  <span className={`pill ${billing.isPaid?'pill-green':billing.isExpired?'pill-red':'pill-amber'}`}>
+                    {billing.isPaid ? `✓ ${billing.planName}` : billing.isExpired ? 'Trial ended' : 'Free trial'}
+                  </span>
                 </div>
-                <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => showToast('Plan upgrade — contact support@caportal.in')}>
-                  Upgrade to Firm plan
-                </button>
+                {billing.isPaid && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => {
+                    if (window.confirm('Cancel your subscription? You keep access until the period ends.')) {
+                      cancelPlan(); showToast('Subscription cancelled');
+                    }
+                  }}>Cancel subscription</button>
+                )}
               </div>
-              <div className="settings-note">
-                To upgrade or cancel, contact support@caportal.in · Billing powered by Razorpay
-              </div>
+
+              {(!billing.isPaid || billing.plan !== 'firm') && (
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:10 }}>
+                    {billing.isPaid ? 'Upgrade plan' : 'Subscribe now'}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {Object.values(PLANS)
+                      .filter(p => !billing.isPaid || (PLANS[billing.plan]?.price || 0) < p.price)
+                      .map(plan => (
+                        <div key={plan.id} className="settings-card" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                          <div>
+                            <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{plan.name}</div>
+                            <div style={{ fontSize:11, color:'var(--text3)' }}>
+                              {plan.clientLimit ? `Up to ${plan.clientLimit} clients` : 'Unlimited'} · ₹{plan.price.toLocaleString()}/month
+                            </div>
+                          </div>
+                          <button className="btn btn-primary btn-sm"
+                            disabled={payingPlan === plan.id}
+                            onClick={async () => {
+                              setPayingPlan(plan.id);
+                              await payForPlan(plan.id, profile.name, profile.email,
+                                () => { setPayingPlan(null); showToast(`${plan.name} plan activated!`); },
+                                () => setPayingPlan(null)
+                              );
+                              setPayingPlan(null);
+                            }}>
+                            {payingPlan === plan.id ? '...' : `₹${plan.price.toLocaleString()}/mo`}
+                          </button>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {billing.payments.length > 0 && (
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:10 }}>Payment history</div>
+                  <div className="settings-card" style={{ padding:0, overflow:'hidden' }}>
+                    {billing.payments.map((p, i) => (
+                      <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < billing.payments.length-1 ? '1px solid var(--border)' : 'none', fontSize:12 }}>
+                        <div>
+                          <div style={{ color:'var(--text)', fontWeight:500 }}>{PLANS[p.plan]?.name || p.plan} plan</div>
+                          <div style={{ color:'var(--text3)', fontSize:10, fontFamily:'var(--mono)', marginTop:2 }}>
+                            {new Date(p.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
+                            {p.id && !p.id.startsWith('manual_') ? ` · ${p.id}` : ''}
+                          </div>
+                        </div>
+                        <div style={{ color:'var(--green)', fontWeight:700, fontFamily:'var(--mono)' }}>₹{p.amount?.toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="settings-note">Payments processed by Razorpay. For billing queries email support@caportal.co</div>
             </div>
           )}
 
