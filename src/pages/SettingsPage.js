@@ -24,7 +24,8 @@ export default function SettingsPage({ user, setUser, showToast }) {
   });
 
   const [keys, setKeys] = useState({
-    razorpayKey: savedSettings.razorpayKey || '',
+    upiId:       savedSettings.upiId       || '',
+    upiName:     savedSettings.upiName     || '',
     gupshupKey:  savedSettings.gupshupKey  || '',
     resendKey:   savedSettings.resendKey   || '',
   });
@@ -136,49 +137,63 @@ export default function SettingsPage({ user, setUser, showToast }) {
 
           {tab === 'integrations' && (
             <div className="settings-section">
-              <div className="int-card">
+
+              {/* UPI — primary, most important */}
+              <div className="int-card" style={{ borderColor: keys.upiId ? 'var(--accent-border)' : undefined }}>
                 <div className="int-header">
                   <div className="int-logo int-razorpay">₹</div>
-                  <div>
-                    <div className="int-name">Razorpay</div>
-                    <div className="int-desc">Collect fees via UPI, cards, netbanking. Get your key at razorpay.com/app/keys</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="int-name">UPI Payment</div>
+                    <div className="int-desc">
+                      Your clients pay your fees directly to your UPI ID — works with GPay, PhonePe, Paytm, any UPI app. No API key needed.
+                    </div>
                   </div>
-                  <span className={`pill ${keys.razorpayKey ? 'pill-green' : 'pill-gray'}`}>
-                    {keys.razorpayKey ? 'Connected' : 'Not set'}
+                  <span className={`pill ${keys.upiId ? 'pill-green' : 'pill-amber'}`}>
+                    {keys.upiId ? '✓ Set up' : 'Not set'}
                   </span>
                 </div>
-                <div className="form-group" style={{ marginTop: 12 }}>
-                  <label className="form-label">API Key</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input className="input" style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 11 }}
-                      type={showKeys.razorpay ? 'text' : 'password'}
-                      placeholder="rzp_test_XXXXXXXXXX"
-                      value={keys.razorpayKey} onChange={e => setK('razorpayKey', e.target.value)} />
-                    <button className="btn btn-ghost btn-sm" onClick={() => toggleShow('razorpay')}>
-                      {showKeys.razorpay ? 'Hide' : 'Show'}
-                    </button>
+                <div className="form-row" style={{ marginTop: 14 }}>
+                  <div className="form-group">
+                    <label className="form-label">Your UPI ID *</label>
+                    <input className="input" placeholder="yourname@paytm  or  9876543210@ybl"
+                      value={keys.upiId} onChange={e => setK('upiId', e.target.value.trim())} />
+                    <span className="form-hint">Found in GPay / PhonePe / Paytm → Profile → UPI ID</span>
                   </div>
-                  <span className="form-hint">Use rzp_test_... for testing, rzp_live_... for production</span>
+                  <div className="form-group">
+                    <label className="form-label">Display name</label>
+                    <input className="input" placeholder="Rahul Mishra, CA"
+                      value={keys.upiName} onChange={e => setK('upiName', e.target.value)} />
+                    <span className="form-hint">Shown to client on the payment screen</span>
+                  </div>
                 </div>
+                {keys.upiId && (
+                  <div className="upi-preview">
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>Preview link your clients will see →</span>
+                    <code style={{ fontSize: 11, color: 'var(--accent)', background: 'var(--bg3)', padding: '2px 8px', borderRadius: 4 }}>
+                      upi://pay?pa={keys.upiId}&pn={encodeURIComponent(keys.upiName || 'CA')}
+                    </code>
+                  </div>
+                )}
               </div>
 
+              {/* WhatsApp */}
               <div className="int-card">
                 <div className="int-header">
                   <div className="int-logo int-whatsapp">💬</div>
                   <div>
-                    <div className="int-name">Gupshup (WhatsApp)</div>
-                    <div className="int-desc">Send automated document reminders via WhatsApp. India-first, ₹0.35/message. gupshup.io</div>
+                    <div className="int-name">WhatsApp Reminders <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></div>
+                    <div className="int-desc">Auto-send document reminders via WhatsApp. India-first, ₹0.35/message. gupshup.io</div>
                   </div>
                   <span className={`pill ${keys.gupshupKey ? 'pill-green' : 'pill-gray'}`}>
-                    {keys.gupshupKey ? 'Connected' : 'Not set'}
+                    {keys.gupshupKey ? 'Connected' : 'Optional'}
                   </span>
                 </div>
                 <div className="form-group" style={{ marginTop: 12 }}>
-                  <label className="form-label">API Key</label>
+                  <label className="form-label">Gupshup API Key</label>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <input className="input" style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 11 }}
                       type={showKeys.gupshup ? 'text' : 'password'}
-                      placeholder="gupshup_api_key_here"
+                      placeholder="Get from gupshup.io → API Access"
                       value={keys.gupshupKey} onChange={e => setK('gupshupKey', e.target.value)} />
                     <button className="btn btn-ghost btn-sm" onClick={() => toggleShow('gupshup')}>
                       {showKeys.gupshup ? 'Hide' : 'Show'}
@@ -187,23 +202,24 @@ export default function SettingsPage({ user, setUser, showToast }) {
                 </div>
               </div>
 
+              {/* Email */}
               <div className="int-card">
                 <div className="int-header">
                   <div className="int-logo int-email">✉</div>
                   <div>
-                    <div className="int-name">Resend (Email)</div>
-                    <div className="int-desc">Email clients when ITR is filed, or when you need documents. resend.com — free up to 3,000/month</div>
+                    <div className="int-name">Email Notifications <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></div>
+                    <div className="int-desc">Email clients when ITR is filed or documents are needed. resend.com — free up to 3,000/month</div>
                   </div>
                   <span className={`pill ${keys.resendKey ? 'pill-green' : 'pill-gray'}`}>
-                    {keys.resendKey ? 'Connected' : 'Not set'}
+                    {keys.resendKey ? 'Connected' : 'Optional'}
                   </span>
                 </div>
                 <div className="form-group" style={{ marginTop: 12 }}>
-                  <label className="form-label">API Key</label>
+                  <label className="form-label">Resend API Key</label>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <input className="input" style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 11 }}
                       type={showKeys.resend ? 'text' : 'password'}
-                      placeholder="re_xxxxxxxxxx"
+                      placeholder="Get from resend.com → API Keys"
                       value={keys.resendKey} onChange={e => setK('resendKey', e.target.value)} />
                     <button className="btn btn-ghost btn-sm" onClick={() => toggleShow('resend')}>
                       {showKeys.resend ? 'Hide' : 'Show'}
@@ -212,8 +228,10 @@ export default function SettingsPage({ user, setUser, showToast }) {
                 </div>
               </div>
 
-              <button className="btn btn-primary" onClick={saveKeys}>Save integration keys</button>
-              <div className="settings-note">Keys are saved locally. When you deploy to Vercel, add them as environment variables instead.</div>
+              <button className="btn btn-primary" onClick={saveKeys}>Save settings</button>
+              <div className="settings-note">
+                UPI ID is required for clients to pay your fees. WhatsApp and Email keys are optional — you can add them later.
+              </div>
             </div>
           )}
 

@@ -89,3 +89,36 @@
   transition: background 0.15s; white-space: nowrap;
 }
 .pfc-btn:hover { background: #7aa0f7; }
+
+/* UPI PAYMENT MODAL */
+.upi-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 200; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.upi-modal {
+  background: #111; border: 1px solid #222; border-radius: 16px;
+  padding: 24px; width: 280px; display: flex; flex-direction: column;
+  align-items: center; gap: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.8);
+}
+.upi-modal-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.upi-modal-sub   { font-size: 11px; color: #666; text-align: center; line-height: 1.5; margin-top: -4px; }
+.upi-qr { width: 180px; height: 180px; border-radius: 10px; background: #fff; padding: 6px; }
+.upi-id-row, .upi-amount-row {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: #1a1a1a; border-radius: 8px; padding: 8px 12px;
+}
+.upi-id-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+.upi-id-val   { font-size: 12px; color: #ededed; font-family: monospace; flex: 1; word-break: break-all; }
+.upi-copy-btn { background: var(--accent); border: none; color: #fff; font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 5px; cursor: pointer; flex-shrink: 0; }
+.upi-paid-btn {
+  width: 100%; background: var(--green); border: none; color: #000;
+  font-size: 13px; font-weight: 700; padding: 11px; border-radius: 10px;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.upi-paid-btn:hover { opacity: 0.9; }
+.upi-close-btn {
+  background: none; border: none; color: #555; font-size: 12px;
+  cursor: pointer; padding: 4px;
+}
+.upi-close-btn:hover { color: #888; }

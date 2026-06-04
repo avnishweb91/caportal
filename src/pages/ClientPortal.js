@@ -1,6 +1,15 @@
 import { useState } from 'react';
-import { openPayment } from '../lib/razorpay';
 import './ClientPortal.css';
+
+const getCASettings = () => {
+  try { return JSON.parse(localStorage.getItem('ca_settings') || '{}'); }
+  catch { return {}; }
+};
+
+const makeUpiLink = (upiId, name, amount, desc) =>
+  `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name || 'CA')}&am=${amount}&tn=${encodeURIComponent(desc)}&cu=INR`;
+
+const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 const steps = [
   { label:'Portal link sent',       time:'May 27', done:true,  active:false },
@@ -15,6 +24,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
   const [toast, setToast] = useState(null);
   const [msg, setMsg] = useState('');
   const [paid, setPaid] = useState(client?.feePaid || false);
+  const [showUpiModal, setShowUpiModal] = useState(false);
   const [msgs, setMsgs] = useState([
     { text:"Hi! Please upload your rent receipts when you get a chance — it's the last document we need.", from:'ca' },
     { text:'Sure, will do it by tonight!', from:'client' },
@@ -42,21 +52,18 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
     setMsg('');
   };
 
-  const handlePayFee = async () => {
-    await openPayment({
-      amount:      client.feeAmount,
-      clientName:  client.name,
-      clientEmail: client.email || '',
-      clientPhone: client.phone || '',
-      description: client.type + ' FY 2025–26 — Professional fee',
-      onSuccess: (resp) => {
-        setPaid(true);
-        setToast(true);
-        setTimeout(() => setToast(false), 3000);
-        showToast?.(`Payment of ₹${client.feeAmount.toLocaleString()} received`);
-      },
-      onDismiss: () => {},
-    });
+  const caSettings = getCASettings();
+  const upiId   = caSettings.upiId   || '';
+  const upiName = caSettings.upiName || 'Your CA';
+
+  const handlePayFee = () => {
+    if (!upiId) { showPortalToast('Payment not set up yet — contact your CA'); return; }
+    const desc    = `${client.type} FY 2025-26 Fee`;
+    const upiLink = makeUpiLink(upiId, upiName, client.feeAmount, desc);
+    if (isMobile()) {
+      window.location.href = upiLink;
+    }
+    // desktop shows QR + copy — handled in JSX below
   };
 
   const tabs = [
@@ -100,14 +107,17 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             </div>
 
             {/* Fee payment card */}
-            {!paid && client.feeAmount > 0 && (
+            {!paid && client.feeAmount > 0 && upiId && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
                   <div className="pfc-label">Professional fee</div>
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                   <div className="pfc-sub">{client.type} · FY 2025–26</div>
                 </div>
-                <button className="pfc-btn" onClick={handlePayFee}>Pay now →</button>
+                {isMobile()
+                  ? <button className="pfc-btn" onClick={handlePayFee}>Pay via UPI →</button>
+                  : <button className="pfc-btn" onClick={() => setShowUpiModal(true)}>Pay ₹{client.feeAmount.toLocaleString()} →</button>
+                }
               </div>
             )}
             {paid && (
@@ -117,6 +127,37 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                 </div>
                 <span style={{fontSize:12,color:'var(--green)',fontWeight:600}}>✓ Paid</span>
+              </div>
+            )}
+
+            {/* UPI modal for desktop */}
+            {showUpiModal && (
+              <div className="upi-modal-overlay" onClick={() => setShowUpiModal(false)}>
+                <div className="upi-modal" onClick={e => e.stopPropagation()}>
+                  <div className="upi-modal-title">Pay ₹{client.feeAmount.toLocaleString()}</div>
+                  <div className="upi-modal-sub">Scan with GPay, PhonePe, Paytm or any UPI app</div>
+                  <img
+                    className="upi-qr"
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(makeUpiLink(upiId, upiName, client.feeAmount, client.type + ' Fee'))}`}
+                    alt="UPI QR Code"
+                  />
+                  <div className="upi-id-row">
+                    <span className="upi-id-label">UPI ID</span>
+                    <span className="upi-id-val">{upiId}</span>
+                    <button className="upi-copy-btn" onClick={() => {
+                      navigator.clipboard?.writeText(upiId);
+                      showPortalToast('UPI ID copied');
+                    }}>Copy</button>
+                  </div>
+                  <div className="upi-amount-row">
+                    <span className="upi-id-label">Amount</span>
+                    <span className="upi-id-val" style={{color:'var(--green)',fontWeight:700}}>₹{client.feeAmount.toLocaleString()}</span>
+                  </div>
+                  <button className="upi-paid-btn" onClick={() => { setPaid(true); setShowUpiModal(false); showPortalToast('Thank you! Your CA will confirm the payment.'); }}>
+                    I have paid ✓
+                  </button>
+                  <button className="upi-close-btn" onClick={() => setShowUpiModal(false)}>Cancel</button>
+                </div>
               </div>
             )}
 
