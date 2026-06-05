@@ -1,5 +1,8 @@
-export const generateToken = () =>
-  Math.random().toString(36).slice(2, 11) + Math.random().toString(36).slice(2, 11);
+export const generateToken = () => {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+};
 
 export const getPortalUrl = (token) => {
   const base = window.location.origin + window.location.pathname;

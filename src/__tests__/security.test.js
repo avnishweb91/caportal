@@ -13,10 +13,13 @@ describe('generateToken — entropy', () => {
   test('token is at least 16 characters', () => {
     expect(generateToken().length).toBeGreaterThanOrEqual(16);
   });
-  test('token contains only URL-safe alphanumeric characters', () => {
+  test('token contains only hex characters (crypto.getRandomValues output)', () => {
     for (let i = 0; i < 50; i++) {
-      expect(generateToken()).toMatch(/^[a-z0-9]+$/i);
+      expect(generateToken()).toMatch(/^[a-f0-9]+$/);
     }
+  });
+  test('token is 48 hex chars = 24 random bytes = 192 bits of entropy', () => {
+    expect(generateToken()).toHaveLength(48);
   });
   test('1000 consecutive tokens contain no duplicates', () => {
     const tokens = Array.from({ length: 1000 }, generateToken);
