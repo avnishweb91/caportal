@@ -56,6 +56,30 @@
 .stat-val span { color: var(--accent); }
 .stat-label { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
+/* HOW IT WORKS */
+.how-it-works {
+  padding: 72px 40px;
+  border-top: 1px solid var(--border);
+  background: var(--bg1);
+}
+.how-steps {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; margin-top: 40px;
+}
+.how-step {
+  padding: 0 40px 0 0;
+  border-right: 1px solid var(--border);
+}
+.how-step:last-child { border-right: none; padding-right: 0; padding-left: 40px; }
+.how-step:nth-child(2) { padding: 0 40px; }
+.how-num {
+  font-size: 42px; font-weight: 800; color: var(--border2);
+  font-family: var(--mono); letter-spacing: -2px; line-height: 1;
+  margin-bottom: 18px;
+}
+.how-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; letter-spacing: -0.3px; line-height: 1.4; }
+.how-desc  { font-size: 13px; color: var(--text3); line-height: 1.75; }
+
 /* FEATURES */
 .features { padding: 64px 40px; }
 .section-eyebrow { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
@@ -144,6 +168,21 @@
 .footer-link:hover { color: var(--text2); }
 
 @media (max-width: 768px) {
+  .how-it-works { padding: 48px 20px; }
+  .how-steps { grid-template-columns: 1fr; gap: 32px; }
+  .how-step { padding: 0 0 0 20px !important; border-right: none; border-left: 2px solid var(--border); }
+  .hero-h1 { font-size: 34px; letter-spacing: -1px; }
+  .hero { padding: 64px 20px 56px; }
+  .stats-bar { flex-wrap: wrap; }
+  .stat-item { flex: 1 1 50%; border-bottom: 1px solid var(--border); }
+  .features { padding: 48px 20px; }
+  .feat-grid { grid-template-columns: 1fr 1fr; }
+  .pricing { padding: 48px 20px; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .cta-section { padding: 56px 20px; }
+  .cta-h2 { font-size: 26px; }
+  .land-nav { padding: 0 20px; }
+  .land-nav-links { display: none; }
   .footer-top { flex-direction: column; gap: 24px; padding: 32px 20px 24px; }
   .footer-brand { max-width: 100%; }
   .footer-cols { flex-wrap: wrap; gap: 24px; }

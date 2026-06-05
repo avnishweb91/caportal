@@ -2,12 +2,15 @@ import { useState } from 'react';
 import './Landing.css';
 
 const features = [
-  { tag:'Core', tagClass:'feat-tag-blue', title:'Document collection portal', desc:'Each client gets a private link. They upload Form 16, bank statements, PAN, Aadhaar — you see everything in one organised folder. No more digging through WhatsApp.' },
-  { tag:'Automation', tagClass:'feat-tag-green', title:'Auto WhatsApp reminders', desc:'Set a checklist per client. The tool auto-sends reminders until documents arrive. You stop typing "please share your Form 16" forever.' },
-  { tag:'Deadlines', tagClass:'feat-tag-amber', title:'ITR & GST deadline calendar', desc:'Pre-loaded with every Indian tax deadline — ITR, GST, TDS, Advance Tax. Alerts fire 7 days before. Clients get notified too.' },
-  { tag:'Tracking', tagClass:'feat-tag-blue', title:'Filing status per client', desc:'Clients check their own filing status without calling you. CA marks progress — documents pending → under review → draft ready → filed.' },
-  { tag:'Billing', tagClass:'feat-tag-purple', title:'Fee invoices + UPI payments', desc:"Send professional invoices inside the portal. Clients pay via UPI or card. You track who has paid, who hasn't, and how much is outstanding." },
-  { tag:'Insights', tagClass:'feat-tag-green', title:'Practice analytics dashboard', desc:'Total clients filed, pending, fees collected, season progress. Understand your practice health at a glance every morning.' },
+  { tag:'Core',        tagClass:'feat-tag-blue',   title:'Document collection portal',   desc:'Each client gets a private link. They upload Form 16, bank statements, PAN, Aadhaar — you see everything in one organised folder. No more digging through WhatsApp.' },
+  { tag:'Automation',  tagClass:'feat-tag-green',  title:'Auto WhatsApp reminders',       desc:'Set a checklist per client. The tool auto-sends reminders until documents arrive. You stop typing "please share your Form 16" forever.' },
+  { tag:'Deadlines',   tagClass:'feat-tag-amber',  title:'ITR & GST deadline calendar',   desc:'Pre-loaded with every Indian tax deadline — ITR, GST, TDS, Advance Tax. Alerts fire 7 days before. Clients get notified too.' },
+  { tag:'Workflow',    tagClass:'feat-tag-blue',   title:'7-step filing pipeline',        desc:'Waiting docs → Docs received → Computation done → Return prepared → Client approved → Filed → Ack received. One-click advance. Every client exactly where they are.' },
+  { tag:'Billing',     tagClass:'feat-tag-purple', title:'Fee invoices + UPI payments',   desc:"Send professional invoices inside the portal. Clients pay via UPI or card. You track who has paid, who hasn't, and how much is outstanding." },
+  { tag:'Insights',    tagClass:'feat-tag-green',  title:'Practice analytics dashboard',  desc:'Total clients filed, pending, fees collected, season progress. Understand your practice health at a glance every morning.' },
+  { tag:'Compute',     tagClass:'feat-tag-amber',  title:'Tax computation sheet',         desc:'FY 2025-26. Both old and new regimes. All income heads, every deduction (80C–80U), Budget 2024 capital gains rates, advance tax schedule. Download as a professional PDF.' },
+  { tag:'Accounts',    tagClass:'feat-tag-purple', title:'Balance Sheet Builder',         desc:'Enter Trading Account figures, P&L flows automatically, Balance Sheet auto-tallies. Shows if assets = liabilities. Exports a T-account format PDF in Indian accounting style.' },
+  { tag:'Records',     tagClass:'feat-tag-blue',   title:'Acknowledgment tracker',        desc:'Every ITR-V ack number, GST ARN, and TDS reference stored per client. Search across your entire practice by client name, PAN, or reference number in one place.' },
 ];
 
 const plans = [
@@ -317,7 +320,7 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
       <div className="hero">
         <div className="hero-badge"><div className="hero-badge-dot"/>&nbsp;Built exclusively for Indian CAs</div>
         <h1 className="hero-h1">Stop running your practice<br/>on <s>WhatsApp</s><br/>Start using <em>CAPortal.</em></h1>
-        <p className="hero-sub">The only client workspace built for Indian CAs — document collection, ITR deadline tracking, and filing status management. All in one place.</p>
+        <p className="hero-sub">Document collection, tax computation, balance sheets, 7-step filing workflow, and acknowledgment tracking — built for Indian CAs. All in one place.</p>
         <div className="hero-actions">
           <button className="btn btn-primary btn-lg" onClick={() => onGetStarted('signin')}>See the dashboard →</button>
           <button className="btn btn-ghost btn-lg" onClick={() => setActiveModal('about')}>Learn more</button>
@@ -332,6 +335,37 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
             <div className="stat-label">{l}</div>
           </div>
         ))}
+      </div>
+
+      {/* HOW IT WORKS */}
+      <div className="how-it-works">
+        <div className="section-eyebrow">How it works</div>
+        <h2 className="section-h2">From WhatsApp chaos to one clean workspace</h2>
+        <div className="how-steps">
+          {[
+            {
+              num: '01',
+              title: 'Add a client, pick their filing type',
+              desc: 'Enter name, PAN, phone. Select ITR-1, ITR-2, GST Filing, Company ITR — the right document checklist loads automatically. Share their unique portal link via WhatsApp in one tap.',
+            },
+            {
+              num: '02',
+              title: 'Client uploads documents themselves',
+              desc: 'They open the link on their phone — no app, no login required. Upload Form 16, bank statement, capital gains statement — whatever their checklist shows. You see each upload instantly.',
+            },
+            {
+              num: '03',
+              title: 'Compute, file, close',
+              desc: 'Run the tax computation sheet, build their balance sheet, move them through 7 workflow stages from docs received to acknowledgment. Record the ITR ack number. Season closed.',
+            },
+          ].map((s, i) => (
+            <div className="how-step" key={i}>
+              <div className="how-num">{s.num}</div>
+              <div className="how-title">{s.title}</div>
+              <div className="how-desc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* FEATURES */}
