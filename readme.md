@@ -1,7 +1,7 @@
 # CAPortal — Practice Management SaaS for Indian CAs
 
 > Live at **[caportal.co](https://caportal.co)**  
-> React 19 · Supabase · Razorpay · Dark theme · No UI framework
+> React 19 · Supabase · UPI · Dark theme · No UI framework
 
 ---
 
@@ -20,20 +20,26 @@ CAPortal replaces the WhatsApp + Excel workflow every Indian CA uses to manage c
 ## What's Built
 
 ### CA-facing screens
+
 | Screen | File | Description |
 |---|---|---|
 | Landing | `src/pages/Landing.js` | Marketing page — hero, features, pricing, social proof |
 | Auth | `src/pages/AuthPage.js` | Sign in / sign up with Supabase auth + demo account |
-| Dashboard | `src/pages/Dashboard.js` | Client list, search, filter, bulk remind, export CSV |
-| Client Detail | `src/pages/ClientDetail.js` | Full client view — docs, timeline, status, invoice PDF |
+| Dashboard | `src/pages/Dashboard.js` | Client list, search, filter by 7-step status, bulk remind, export CSV |
+| Client Detail | `src/pages/ClientDetail.js` | Full client view — 7-step workflow pipeline, docs, timeline, ack card, invoice PDF |
 | Invoices | `src/pages/InvoicesPage.js` | All fees — mark paid, collect via UPI |
 | Documents | `src/pages/DocumentsPage.js` | All documents across all clients |
 | Deadlines | `src/pages/DeadlinesPage.js` | ITR, GST, TDS deadlines with urgency badges |
 | Reminders | `src/pages/RemindersPage.js` | WhatsApp reminder log + compose |
+| Tax Computation | `src/pages/TaxComputationPage.js` | FY 2025-26 — both regimes, all income heads, CG Budget 2024 rates, advance tax, PDF |
+| Balance Sheet Builder | `src/pages/BalanceSheetPage.js` | Trading A/c → P&L → Balance Sheet, auto-tally, Indian-format PDF |
+| Acknowledgment Tracker | `src/pages/AcknowledgmentPage.js` | Store and search ITR ack nos., GST ARNs, TDS ref nos. per client |
+| Templates | `src/pages/TemplatesPage.js` | 8 work type templates — ITR-1/2/3/4, GST, TDS, Company ITR |
 | Settings | `src/pages/SettingsPage.js` | Profile, Billing, Integrations (UPI ID) |
 | Plan Select | `src/pages/PlanSelectPage.js` | Subscription wall shown when trial expires |
 
 ### Client-facing screen
+
 | Screen | File | Description |
 |---|---|---|
 | Client Portal | `src/pages/ClientPortal.js` | Mobile-first portal — docs, status, messaging, UPI payment |
@@ -47,19 +53,35 @@ Accessible via unique link: `caportal.co/?portal=TOKEN`
 **Client portal magic link**
 Every client gets a unique URL. CA copies it from Client Detail and sends via WhatsApp. Client opens it on phone — no app, no login. Uploads documents, pays fees, messages CA.
 
+**7-step filing workflow**
+Each client moves through a granular pipeline instead of coarse 4-step status:
+`Waiting docs → Docs received → Computation done → Return prepared → Client approved → Filed → Ack received`
+One-click advance button on Client Detail. Any step clickable to jump directly. Dashboard filter works across all 7 stages.
+
+**Tax Computation Sheet**
+FY 2025-26 computation supporting both old and new tax regimes, all income heads (salary, house property, capital gains with Budget 2024 LTCG/STCG rates, other sources), all deductions (80C–80U), and advance tax. Downloads as a professional PDF with CA stamp and client details.
+
+**Balance Sheet Builder**
+Three-tab form — Trading Account, P&L Account, Balance Sheet. Live summary panel updates as figures are entered. Auto-tally shows if assets = liabilities. Exports a professional T-account format PDF in Indian accounting style with CA signature block.
+
+**Acknowledgment Tracker**
+Per-client storage of ITR-V ack numbers, GST ARNs (GSTR-1/3B), TDS return tokens, and other filing references. Searchable across all clients simultaneously — search by name, PAN, ref number, or period. Type filters: ITR / GST / TDS / Other. Add from either the tracker page or directly from the client's detail card.
+
+**Work Type Templates**
+8 purpose-built document checklists — ITR-1 (Sahaj), ITR-2, ITR-3, ITR-4 (Sugam), GST Filing, GST + ITR, TDS Return, Company ITR. When adding a client, selecting a filing type shows its description and pre-loads the exact checklist. Templates page shows all 8 types with numbered document lists.
+
 **Subscription billing**
-- 14-day free trial → plan selection wall → Razorpay checkout
-- Webhook via Supabase Edge Function verifies payment and activates plan in database
-- CA subscription payments go to developer's Razorpay account
+14-day free trial → plan selection wall → Razorpay checkout
+Webhook via Supabase Edge Function verifies payment and activates plan in database.
 
 **UPI payments for client fees**
-CA enters their UPI ID in Settings → Integrations. When client opens portal → "Pay ₹X" button opens GPay/PhonePe/Paytm on phone, or shows QR code on desktop. Money goes directly to CA's bank account via NPCI. No API keys needed for CA.
+CA enters their UPI ID in Settings → Integrations. When client opens portal → "Pay ₹X" button opens GPay/PhonePe/Paytm on phone, or shows QR code on desktop. Money goes directly to CA's bank via NPCI. No API keys needed for CA.
 
 **Real file upload**
 Client taps upload zone → file picker opens → PDF/JPG/PNG selected → document marked received on CA's dashboard.
 
 **Invoice PDF**
-Client Detail → "Download invoice" → professional invoice opens in new tab → save as PDF. Shows CA firm name, client details, fee, payment status.
+Client Detail → "Download invoice" → professional invoice opens in new tab → save as PDF.
 
 ---
 
@@ -86,7 +108,7 @@ Client Detail → "Download invoice" → professional invoice opens in new tab �
 caportal/
 ├── public/
 │   ├── index.html          # SEO: meta, OG, Twitter cards, JSON-LD schema
-│   ├── favicon.svg         # Branded CA favicon
+│   ├── favicon.svg
 │   ├── og-image.png        # Social sharing preview (1200×630)
 │   ├── sitemap.xml
 │   └── robots.txt
@@ -95,33 +117,41 @@ caportal/
 │   ├── App.js              # Root: screen state, auth gate, billing gate, routing
 │   │
 │   ├── components/
-│   │   ├── Navbar.js/css   # Top bar — logo, hamburger, user menu, logout
+│   │   ├── Navbar.js/css
 │   │   ├── Sidebar.js/css  # Left nav — live counts, mobile overlay
-│   │   ├── ClientFormModal # Add / edit client form with PAN validation
-│   │   └── ClientFormModal.css
+│   │   └── ClientFormModal.js/css  # Add / edit client — PAN validation, template checklist preview
 │   │
 │   ├── pages/
-│   │   ├── Landing.js/css      # Marketing + modals (About, Blog, Privacy, Terms, Support, Status)
-│   │   ├── AuthPage.js/css     # Sign in / sign up — Supabase + localStorage fallback
-│   │   ├── Dashboard.js/css    # CA dashboard + trial warning banner + empty state
-│   │   ├── ClientDetail.js/css # Single client — status dropdown, fee toggle, docs, timeline
-│   │   ├── ClientPortal.js/css # Client portal — UPI payment, real file upload, messaging
-│   │   ├── InvoicesPage.js/css # Fee management
-│   │   ├── DocumentsPage.js    # All documents view
-│   │   ├── DeadlinesPage.js    # Deadline tracker with add/remove
-│   │   ├── RemindersPage.js    # WhatsApp reminder log + compose
-│   │   ├── SettingsPage.js/css # Profile, Billing, Integrations, Data
-│   │   └── PlanSelectPage.js/css # Subscription wall
+│   │   ├── Landing.js/css
+│   │   ├── AuthPage.js/css
+│   │   ├── Dashboard.js/css            # 7-step status filters, metrics strip
+│   │   ├── ClientDetail.js/css         # Workflow pipeline stepper, ack card, timeline
+│   │   ├── ClientPortal.js/css         # UPI payment, real file upload, messaging
+│   │   ├── InvoicesPage.js/css
+│   │   ├── DocumentsPage.js
+│   │   ├── DeadlinesPage.js
+│   │   ├── RemindersPage.js
+│   │   ├── TaxComputationPage.js/css   # FY 2025-26 computation, both regimes, PDF
+│   │   ├── BalanceSheetPage.js/css     # Trading → P&L → BS, auto-tally, PDF
+│   │   ├── AcknowledgmentPage.js/css   # Searchable ITR/GST/TDS ref tracker
+│   │   ├── TemplatesPage.js/css        # Work type template cards
+│   │   ├── SettingsPage.js/css
+│   │   └── PlanSelectPage.js/css
 │   │
 │   ├── lib/
-│   │   ├── billing.js      # Trial logic, plan storage, Supabase sync, Razorpay payment
-│   │   ├── razorpay.js     # Razorpay checkout wrapper
-│   │   ├── supabase.js     # Supabase client + auth helpers
-│   │   ├── invoice.js      # PDF invoice generator (window.print)
-│   │   └── utils.js        # Token generation, UPI links, clipboard, profile helpers
+│   │   ├── billing.js              # Trial logic, plan storage, Supabase sync
+│   │   ├── taxCalc.js              # Tax computation — both regimes, all heads
+│   │   ├── computationPdf.js       # Tax computation PDF generator
+│   │   ├── balanceSheet.js         # Trading/P&L/BS computation
+│   │   ├── balanceSheetPdf.js      # Balance sheet T-account PDF generator
+│   │   ├── workTypeTemplates.js    # 8 work type templates — single source of truth
+│   │   ├── invoice.js              # Invoice PDF generator
+│   │   ├── supabase.js             # Supabase client + auth helpers
+│   │   ├── razorpay.js             # Razorpay checkout wrapper
+│   │   └── utils.js                # Token generation, UPI links, clipboard
 │   │
 │   └── data/
-│       └── mockData.js     # Seed clients, deadlines, reminders, doc templates
+│       └── mockData.js     # Seed clients (spread across 7-step pipeline), deadlines, reminders
 │
 ├── supabase/
 │   └── functions/
@@ -129,8 +159,8 @@ caportal/
 │           └── index.ts    # Edge Function: verify signature → activate plan
 │
 ├── supabase-schema.sql     # Full DB schema — run in Supabase SQL Editor
-├── .env.example            # Template for all environment variables
-└── readme.md
+├── .env.example
+└── README.md
 ```
 
 ---
@@ -147,10 +177,10 @@ REACT_APP_RAZORPAY_KEY=rzp_live_XXXXXXXXXX
 REACT_APP_SUPABASE_URL=https://your-ref.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJ...
 
-# Email (Resend) — platform-handled, CA doesn't see this
+# Email (Resend) — platform-handled
 REACT_APP_RESEND_KEY=re_XXXXXXXXXX
 
-# WhatsApp (Gupshup) — platform-handled, CA doesn't see this
+# WhatsApp (Gupshup) — platform-handled
 REACT_APP_GUPSHUP_KEY=XXXXXXXXXX
 ```
 
@@ -161,13 +191,8 @@ Also set in **Vercel → Settings → Environment Variables** for production.
 ## Getting Started
 
 ```bash
-# Install
 npm install
-
-# Run locally
 npm start        # http://localhost:3000
-
-# Build
 npm run build
 ```
 
@@ -186,7 +211,6 @@ Demo login: `support@caportal.co` / `demo1234`
 ## Webhook Setup (Razorpay → Supabase)
 
 ```bash
-# Deploy Edge Function
 npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=your_secret
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
@@ -228,11 +252,12 @@ All tokens in `src/index.css`:
 | `--bg` | `#0a0a0a` | Page background |
 | `--bg1` | `#111111` | Cards, sidebars |
 | `--accent` | `#5b8af5` | Primary actions, links |
-| `--green` | `#3dd68c` | Success, filed status |
-| `--amber` | `#f5a623` | Warnings, pending |
+| `--green` | `#3dd68c` | Success, filed, ack received |
+| `--amber` | `#f5a623` | Warnings, waiting docs |
+| `--purple` | `#a78bfa` | Return prepared, client approved |
 | `--red` | `#f56565` | Errors, missing docs |
 | `--font` | Geist | All UI text |
-| `--mono` | IBM Plex Mono | Numbers, PANs, dates |
+| `--mono` | IBM Plex Mono | Numbers, PANs, dates, ref numbers |
 
 ---
 
@@ -240,8 +265,8 @@ All tokens in `src/index.css`:
 
 - [ ] Gupshup WhatsApp key → auto-reminders go live
 - [ ] Supabase real-time → CA sees document uploads instantly
-- [ ] Multilingual client portal — Hindi, Tamil, Telugu, Kannada
 - [ ] Draft return approval — CA uploads PDF, client approves with one tap
+- [ ] Multilingual client portal — Hindi, Tamil, Telugu, Kannada
 - [ ] Multi-CA firm accounts — role-based access for staff
 - [ ] Practice analytics — revenue charts, season heatmap
 - [ ] Custom branding — white-label with CA firm logo
