@@ -10,4 +10,5 @@
   text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
 }
 .docs-preview-list { display: flex; flex-direction: column; gap: 5px; }
-.docs-preview-item { font-size: 11px; color: var(--text2); }
+.docs-preview-item { font-size: 11px; color: var(--text2); display: flex; align-items: baseline; gap: 6px; }
+.docs-preview-num { font-size: 10px; color: var(--text3); font-family: var(--mono); min-width: 14px; text-align: right; }

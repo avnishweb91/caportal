@@ -1,0 +1,128 @@
+export const WORK_TYPES = [
+  {
+    id: 'ITR-1',
+    label: 'ITR-1 (Sahaj)',
+    description: 'Salaried individuals — one employer, one house property, interest income. Total income below ₹50 lakh.',
+    color: 'blue',
+    documents: [
+      'Form 16 (Part A & B)',
+      'PAN card',
+      'Aadhaar card',
+      'Bank statement',
+      'Form 26AS / AIS',
+      'Interest certificate (FD / savings)',
+    ],
+  },
+  {
+    id: 'ITR-2',
+    label: 'ITR-2',
+    description: 'Capital gains, multiple house properties, foreign income, or total income above ₹50 lakh.',
+    color: 'purple',
+    documents: [
+      'Form 16 (Part A & B)',
+      'PAN card',
+      'Aadhaar card',
+      'Bank statement',
+      'Capital gains statement (broker / CDSL / NSDL)',
+      'Form 26AS / AIS',
+      'Property sale or purchase deed',
+      'Rental agreement (if rental income)',
+    ],
+  },
+  {
+    id: 'ITR-3',
+    label: 'ITR-3',
+    description: 'Business or profession income — individuals and HUFs with books of accounts.',
+    color: 'amber',
+    documents: [
+      'PAN card',
+      'Aadhaar card',
+      'Bank statement (business account)',
+      'P&L statement',
+      'Balance sheet',
+      'GST returns (if registered)',
+      'TDS certificates (Form 16A)',
+      'Form 26AS / AIS',
+    ],
+  },
+  {
+    id: 'ITR-4',
+    label: 'ITR-4 (Sugam)',
+    description: 'Presumptive income under Sec 44AD / 44ADA / 44AE — small businesses and professionals.',
+    color: 'green',
+    documents: [
+      'PAN card',
+      'Aadhaar card',
+      'Bank statement',
+      'Form 26AS / AIS',
+      'GST returns (if registered)',
+      'Business receipts summary',
+    ],
+  },
+  {
+    id: 'GST Filing',
+    label: 'GST Filing',
+    description: 'Monthly or quarterly GST returns — GSTR-1, GSTR-3B, and annual GSTR-9.',
+    color: 'green',
+    documents: [
+      'GSTIN certificate',
+      'Sales invoices / summary',
+      'Purchase invoices / summary',
+      'Bank statement',
+      'E-way bills (if applicable)',
+      'Previous GST return (for amendment)',
+    ],
+  },
+  {
+    id: 'GST + ITR',
+    label: 'GST + ITR',
+    description: 'Combined GST compliance and income tax return for businesses filing both.',
+    color: 'blue',
+    documents: [
+      'Form 16 (if salaried)',
+      'GST returns',
+      'PAN card',
+      'Aadhaar card',
+      'Bank statement',
+      'Balance sheet',
+      'P&L statement',
+      'Form 26AS / AIS',
+    ],
+  },
+  {
+    id: 'TDS Return',
+    label: 'TDS Return',
+    description: 'Quarterly TDS returns — Form 24Q (salary), 26Q (non-salary), 27Q (NRI payments).',
+    color: 'purple',
+    documents: [
+      'ITNS 281 challans',
+      'Salary register / deductee payment details',
+      'PAN of all deductees',
+      'TAN certificate',
+      'Previous TDS return (for revision)',
+    ],
+  },
+  {
+    id: 'Company ITR',
+    label: 'Company ITR (ITR-6)',
+    description: 'Income tax return for private and public limited companies.',
+    color: 'red',
+    documents: [
+      'Balance sheet (audited)',
+      'P&L statement (audited)',
+      'Tax audit report (Form 3CA / 3CD)',
+      'Board resolution for ITR filing',
+      'GST returns',
+      'TDS certificates (Form 16A)',
+      'PAN card (company)',
+      'Bank statement',
+      'CIN certificate',
+    ],
+  },
+];
+
+export const DOCS_BY_TYPE = Object.fromEntries(
+  WORK_TYPES.map(t => [t.id, t.documents])
+);
+
+export const WORK_TYPE_IDS = WORK_TYPES.map(t => t.id);

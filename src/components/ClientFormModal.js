@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { docsByType } from '../data/mockData';
+import { WORK_TYPES, DOCS_BY_TYPE, WORK_TYPE_IDS } from '../lib/workTypeTemplates';
 import './ClientFormModal.css';
 
-const filingTypes = ['Individual ITR', 'GST Only', 'GST + ITR', 'Company ITR', 'Partnership'];
 const plans = ['Starter', 'Pro', 'Firm'];
 
 const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
@@ -14,7 +13,7 @@ export default function ClientFormModal({ client, onSave, onClose }) {
     pan:       client?.pan       || '',
     phone:     client?.phone     || '',
     email:     client?.email     || '',
-    type:      client?.type      || 'Individual ITR',
+    type:      client?.type      || 'ITR-1',
     plan:      client?.plan      || 'Starter',
     feeAmount: client?.feeAmount || '',
   });
@@ -38,7 +37,7 @@ export default function ClientFormModal({ client, onSave, onClose }) {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-    const docNames = docsByType[form.type] || docsByType['Individual ITR'];
+    const docNames = DOCS_BY_TYPE[form.type] || DOCS_BY_TYPE['ITR-1'];
     const documents = isEdit
       ? client.documents  // keep existing docs on edit
       : docNames.map(name => ({ name, uploaded: false, date: null }));
@@ -105,11 +104,14 @@ export default function ClientFormModal({ client, onSave, onClose }) {
             <div className="form-group">
               <label className="form-label">Filing type *</label>
               <select className="select input" value={form.type} onChange={e => set('type', e.target.value)}>
-                {filingTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                {WORK_TYPE_IDS.map(id => {
+                  const t = WORK_TYPES.find(w => w.id === id);
+                  return <option key={id} value={id}>{t?.label || id}</option>;
+                })}
               </select>
               {!isEdit && (
                 <span className="form-hint">
-                  Sets default document checklist ({(docsByType[form.type] || []).length} docs)
+                  {WORK_TYPES.find(w => w.id === form.type)?.description || ''}
                 </span>
               )}
             </div>
@@ -132,10 +134,14 @@ export default function ClientFormModal({ client, onSave, onClose }) {
 
           {!isEdit && form.type && (
             <div className="docs-preview">
-              <div className="docs-preview-label">Document checklist ({(docsByType[form.type] || []).length} items)</div>
+              <div className="docs-preview-label">
+                Auto-loaded checklist — {(DOCS_BY_TYPE[form.type] || []).length} documents
+              </div>
               <div className="docs-preview-list">
-                {(docsByType[form.type] || []).map(d => (
-                  <span key={d} className="docs-preview-item">◻ {d}</span>
+                {(DOCS_BY_TYPE[form.type] || []).map((d, i) => (
+                  <span key={d} className="docs-preview-item">
+                    <span className="docs-preview-num">{i + 1}</span>{d}
+                  </span>
                 ))}
               </div>
             </div>

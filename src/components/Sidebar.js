@@ -15,6 +15,7 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose 
     { id: 'computation',  icon: '⌗', label: 'Tax Compute' },
     { id: 'balancesheet',   icon: '⊟', label: 'Balance Sheet' },
     { id: 'acknowledgments', icon: '◈', label: 'Ack Tracker' },
+    { id: 'templates',       icon: '▤', label: 'Templates' },
   ];
 
   const isActive = (id) => {

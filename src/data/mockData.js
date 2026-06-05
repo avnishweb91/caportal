@@ -2,7 +2,7 @@ export const clients = [
   {
     id: 1, portalToken: "pt_priya_sha_001", name: "Priya Sharma", pan: "ABCPS1234D",
     phone: "+91 98765 43210", email: "priya@example.com",
-    type: "Individual ITR", plan: "Pro", status: "return_prepared",
+    type: "ITR-1", plan: "Pro", status: "return_prepared",
     docsReceived: 4, docsTotal: 5, feeAmount: 3500, feePaid: false,
     documents: [
       { name: "Form 16", uploaded: true, date: "Jun 1" },
@@ -43,7 +43,7 @@ export const clients = [
   {
     id: 3, portalToken: "pt_anand_meh_003", name: "Anand Mehta", pan: "AAGPM9012F",
     phone: "+91 96543 21098", email: "anand.mehta@gmail.com",
-    type: "Individual ITR", plan: "Starter", status: "ack_received",
+    type: "ITR-1", plan: "Starter", status: "ack_received",
     docsReceived: 4, docsTotal: 4, feeAmount: 2500, feePaid: true,
     acknowledgments: [
       { id: 1001, type: 'itr', refNo: '327010170920256', period: 'AY 2025-26', filedDate: '2025-07-28', notes: 'e-verified via Aadhaar OTP' },
@@ -64,7 +64,7 @@ export const clients = [
   {
     id: 4, portalToken: "pt_sunita_red_004", name: "Sunita Reddy", pan: "AAQRS3456G",
     phone: "+91 95432 10987", email: "sunita.reddy@gmail.com",
-    type: "Individual ITR", plan: "Pro", status: "waiting_docs",
+    type: "ITR-2", plan: "Pro", status: "waiting_docs",
     docsReceived: 3, docsTotal: 4, feeAmount: 3000, feePaid: false,
     documents: [
       { name: "Form 16", uploaded: true, date: "Jun 1" },
@@ -97,7 +97,7 @@ export const clients = [
   {
     id: 6, portalToken: "pt_suresh_006", name: "Suresh Patel", pan: "AABFP3456J",
     phone: "+91 93210 98765", email: "suresh.patel@gmail.com",
-    type: "GST + ITR", plan: "Pro", status: "waiting_docs",
+    type: "ITR-3", plan: "Pro", status: "waiting_docs",
     docsReceived: 2, docsTotal: 6, feeAmount: 9500, feePaid: false,
     documents: [
       { name: "GST returns", uploaded: true, date: "May 28" },
@@ -115,7 +115,7 @@ export const clients = [
   {
     id: 7, portalToken: "pt_meera_007", name: "Meera Joshi", pan: "AAIPJ7890L",
     phone: "+91 92109 87654", email: "meera.joshi@gmail.com",
-    type: "Individual ITR", plan: "Starter", status: "filed",
+    type: "ITR-1", plan: "Starter", status: "filed",
     docsReceived: 4, docsTotal: 4, feeAmount: 2000, feePaid: true,
     acknowledgments: [
       { id: 1002, type: 'itr', refNo: '327010170921847', period: 'AY 2025-26', filedDate: '2025-07-22', notes: '' },
