@@ -1,6 +1,24 @@
 -- CAPortal Supabase Schema
 -- Run this in your Supabase project → SQL Editor → New query
 -- Safe to re-run — uses IF NOT EXISTS / OR REPLACE throughout
+--
+-- ── Migration block (safe for existing databases) ─────────────────────────
+-- If you ran an earlier version of this schema, these statements bring your
+-- existing tables up to date without touching existing data.
+
+-- profiles: add membership_no and upi_id if missing
+alter table if exists profiles
+  add column if not exists membership_no text,
+  add column if not exists upi_id text;
+
+-- clients: drop the old catch-all policy (replaced by two separate policies)
+drop policy if exists "Clients: own rows only"    on clients;
+drop policy if exists "Clients: own CA rows only" on clients;
+
+-- acknowledgments: created below — this is a no-op if it already exists
+-- (handled by create table if not exists)
+
+-- ─────────────────────────────────────────────────────────────────────────
 
 -- ── Profiles (one per authenticated CA) ───────────────────────────────────
 create table if not exists profiles (
