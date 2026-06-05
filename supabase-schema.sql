@@ -11,6 +11,10 @@ alter table if exists profiles
   add column if not exists membership_no text,
   add column if not exists upi_id text;
 
+-- clients: add portal_token if the column is missing from an older schema run
+alter table if exists clients
+  add column if not exists portal_token text unique;
+
 -- clients: drop the old catch-all policy (replaced by two separate policies)
 drop policy if exists "Clients: own rows only"    on clients;
 drop policy if exists "Clients: own CA rows only" on clients;
