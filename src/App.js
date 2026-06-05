@@ -12,6 +12,7 @@ import DeadlinesPage from './pages/DeadlinesPage';
 import RemindersPage from './pages/RemindersPage';
 import SettingsPage from './pages/SettingsPage';
 import TaxComputationPage from './pages/TaxComputationPage';
+import BalanceSheetPage from './pages/BalanceSheetPage';
 import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
@@ -79,7 +80,7 @@ export default function App() {
 
   const handleSidebarSelect = (tab) => {
     setSidebarTab(tab);
-    const map = { dashboard: 'dashboard', clients: 'dashboard', documents: 'documents', deadlines: 'deadlines', invoices: 'invoices', reminders: 'reminders', settings: 'settings', computation: 'computation' };
+    const map = { dashboard: 'dashboard', clients: 'dashboard', documents: 'documents', deadlines: 'deadlines', invoices: 'invoices', reminders: 'reminders', settings: 'settings', computation: 'computation', balancesheet: 'balancesheet' };
     setScreen(map[tab] || 'dashboard');
     setSelected(null);
     setSidebarOpen(false);
@@ -246,6 +247,7 @@ export default function App() {
           {screen === 'reminders' && <RemindersPage clients={clients} showToast={showToast} />}
           {screen === 'settings'     && <SettingsPage  user={user} setUser={setUser} showToast={showToast} />}
           {screen === 'computation'  && <TaxComputationPage clients={clients} showToast={showToast} />}
+          {screen === 'balancesheet' && <BalanceSheetPage  clients={clients} showToast={showToast} />}
         </main>
       </div>
 

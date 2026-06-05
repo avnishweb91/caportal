@@ -12,7 +12,8 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose 
     { id: 'deadlines',   icon: '◷', label: 'Deadlines', badge: 2 },
     { id: 'invoices',    icon: '₹', label: 'Invoices', badge: unpaidCount || undefined },
     { id: 'reminders',   icon: '◉', label: 'Reminders', badge: docsMissing || undefined },
-    { id: 'computation', icon: '⌗', label: 'Tax Compute' },
+    { id: 'computation',  icon: '⌗', label: 'Tax Compute' },
+    { id: 'balancesheet', icon: '⊟', label: 'Balance Sheet' },
   ];
 
   const isActive = (id) => {
