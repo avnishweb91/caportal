@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getPortalUrl, copyToClipboard } from '../lib/utils';
 import { printInvoice } from '../lib/invoice';
+import { ACK_TYPES } from './AcknowledgmentPage';
 import './ClientDetail.css';
 
 const dotColors = { green: 'var(--green)', blue: 'var(--accent)', amber: 'var(--amber)', gray: 'var(--bg4)', red: 'var(--red)' };
@@ -21,6 +22,8 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
   const [newDocName, setNewDocName] = useState('');
   const [showDocInput, setShowDocInput] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showAckForm, setShowAckForm] = useState(false);
+  const [ackForm, setAckForm] = useState({ type: 'itr', refNo: '', period: '', filedDate: '', notes: '' });
 
   const handleCopyPortalLink = async () => {
     const url = getPortalUrl(client.portalToken);
@@ -78,6 +81,29 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
     setNewDocName('');
     setShowDocInput(false);
     showToast('Document request added');
+  };
+
+  const setAck = (k, v) => setAckForm(p => ({ ...p, [k]: v }));
+
+  const addAck = () => {
+    if (!ackForm.refNo.trim()) return;
+    const ti = ACK_TYPES.find(t => t.val === ackForm.type);
+    const newAck = {
+      id: Date.now(), type: ackForm.type,
+      refNo: ackForm.refNo.trim(), period: ackForm.period.trim(),
+      filedDate: ackForm.filedDate || new Date().toISOString().split('T')[0],
+      notes: ackForm.notes.trim(),
+    };
+    onUpdateClient(client.id, {
+      acknowledgments: [...(client.acknowledgments || []), newAck],
+      timeline: [
+        { action: `${ti.label} ack recorded: ${newAck.refNo}`, time: 'Just now', type: 'green' },
+        ...client.timeline,
+      ],
+    });
+    setAckForm({ type: 'itr', refNo: '', period: '', filedDate: '', notes: '' });
+    setShowAckForm(false);
+    showToast('Acknowledgment saved');
   };
 
   const handleArchive = () => {
@@ -254,6 +280,49 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
           </div>
         </div>
       </div>
+
+        <div className="card" style={{ marginBottom: 14 }}>
+          <div className="card-header">
+            <span className="card-header-title">Acknowledgments</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowAckForm(s => !s)}>
+              {showAckForm ? '✕' : '+ Add'}
+            </button>
+          </div>
+          {(client.acknowledgments || []).length === 0 && !showAckForm && (
+            <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text3)' }}>
+              No acknowledgments yet
+            </div>
+          )}
+          {(client.acknowledgments || []).map(a => {
+            const ti = ACK_TYPES.find(t => t.val === a.type) || ACK_TYPES[3];
+            return (
+              <div className="ack-detail-row" key={a.id}>
+                <span className={`pill ${ti.cls}`} style={{ flexShrink: 0 }}>{ti.label}</span>
+                <span className="ack-detail-ref">{a.refNo}</span>
+                <span className="ack-detail-meta">{a.period}</span>
+                <span className="ack-detail-meta">{a.filedDate}</span>
+                {a.notes && <span className="ack-detail-note">{a.notes}</span>}
+              </div>
+            );
+          })}
+          {showAckForm && (
+            <div className="ack-inline-form">
+              <select className="select input ack-inline-sel" value={ackForm.type} onChange={e => setAck('type', e.target.value)}>
+                {ACK_TYPES.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+              </select>
+              <input className="input" style={{ flex: 2 }} placeholder="Ref / Ack No." value={ackForm.refNo}
+                onChange={e => setAck('refNo', e.target.value)} />
+              <input className="input" style={{ maxWidth: 110 }} placeholder="AY 2025-26" value={ackForm.period}
+                onChange={e => setAck('period', e.target.value)} />
+              <input className="input" type="date" style={{ maxWidth: 130 }} value={ackForm.filedDate}
+                onChange={e => setAck('filedDate', e.target.value)} />
+              <input className="input" style={{ flex: 2 }} placeholder="Notes (optional)" value={ackForm.notes}
+                onChange={e => setAck('notes', e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addAck()} />
+              <button className="btn btn-primary btn-sm" onClick={addAck}>Save</button>
+            </div>
+          )}
+        </div>
 
       <div className="detail-actions">
         <button className="btn btn-primary" onClick={() => showToast('WhatsApp integration ready — add Gupshup API key in Settings')}>

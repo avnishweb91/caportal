@@ -13,7 +13,8 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose 
     { id: 'invoices',    icon: '₹', label: 'Invoices', badge: unpaidCount || undefined },
     { id: 'reminders',   icon: '◉', label: 'Reminders', badge: docsMissing || undefined },
     { id: 'computation',  icon: '⌗', label: 'Tax Compute' },
-    { id: 'balancesheet', icon: '⊟', label: 'Balance Sheet' },
+    { id: 'balancesheet',   icon: '⊟', label: 'Balance Sheet' },
+    { id: 'acknowledgments', icon: '◈', label: 'Ack Tracker' },
   ];
 
   const isActive = (id) => {

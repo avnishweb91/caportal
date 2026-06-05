@@ -23,6 +23,9 @@ export const clients = [
     id: 2, portalToken: "pt_vikram_tex_002", name: "Vikram Textiles", pan: "AABFV5678K",
     phone: "+91 97654 32109", email: "accounts@vikramtextiles.com",
     type: "GST + ITR", plan: "Starter", status: "docs_received",
+    acknowledgments: [
+      { id: 1003, type: 'gst', refNo: 'AA2706261234560', period: 'GSTR-3B May 2026', filedDate: '2026-06-20', notes: '' },
+    ],
     docsReceived: 3, docsTotal: 5, feeAmount: 8000, feePaid: false,
     documents: [
       { name: "GST returns", uploaded: true, date: "May 30" },
@@ -42,6 +45,9 @@ export const clients = [
     phone: "+91 96543 21098", email: "anand.mehta@gmail.com",
     type: "Individual ITR", plan: "Starter", status: "ack_received",
     docsReceived: 4, docsTotal: 4, feeAmount: 2500, feePaid: true,
+    acknowledgments: [
+      { id: 1001, type: 'itr', refNo: '327010170920256', period: 'AY 2025-26', filedDate: '2025-07-28', notes: 'e-verified via Aadhaar OTP' },
+    ],
     documents: [
       { name: "Form 16", uploaded: true, date: "May 20" },
       { name: "Bank statement", uploaded: true, date: "May 20" },
@@ -111,6 +117,9 @@ export const clients = [
     phone: "+91 92109 87654", email: "meera.joshi@gmail.com",
     type: "Individual ITR", plan: "Starter", status: "filed",
     docsReceived: 4, docsTotal: 4, feeAmount: 2000, feePaid: true,
+    acknowledgments: [
+      { id: 1002, type: 'itr', refNo: '327010170921847', period: 'AY 2025-26', filedDate: '2025-07-22', notes: '' },
+    ],
     documents: [
       { name: "Form 16", uploaded: true, date: "May 15" },
       { name: "Bank statement", uploaded: true, date: "May 15" },
