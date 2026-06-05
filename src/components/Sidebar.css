@@ -64,6 +64,58 @@
   padding: 1px 6px; border-radius: 10px; font-weight: 600;
 }
 
+/* ── Help modal ── */
+.sb-help-modal { width: 500px; max-width: calc(100vw - 32px); }
+
+.sb-help-lead {
+  font-size: 13px; color: var(--text2); line-height: 1.6;
+  margin-bottom: 16px;
+}
+.sb-help-contact {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.sb-help-contact-icon { font-size: 22px; flex-shrink: 0; }
+.sb-help-contact-body { flex: 1; }
+.sb-help-contact-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.sb-help-contact-email { font-size: 14px; font-weight: 600; color: var(--accent); font-family: var(--mono); }
+.sb-help-contact-hours { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.sb-help-send { flex-shrink: 0; text-decoration: none; }
+
+.sb-help-faq-label {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.sb-help-faqs {
+  border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+  margin-bottom: 16px;
+}
+.sb-help-faq { border-bottom: 1px solid var(--border); }
+.sb-help-faq:last-child { border-bottom: none; }
+.sb-help-faq-q {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 11px 14px; background: none; border: none;
+  text-align: left; font-size: 12px; font-weight: 500; color: var(--text);
+  cursor: pointer; gap: 10px;
+}
+.sb-help-faq-q:hover { background: var(--bg2); }
+.sb-help-faq.open .sb-help-faq-q { background: var(--bg2); color: var(--accent); }
+.sb-help-faq-chevron { font-size: 9px; color: var(--text3); flex-shrink: 0; }
+.sb-help-faq-a {
+  padding: 0 14px 12px; font-size: 12px; color: var(--text3); line-height: 1.7;
+  background: var(--bg2);
+}
+
+.sb-help-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--text3); padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.sb-help-footer a { color: var(--accent); text-decoration: none; }
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .sidebar {
