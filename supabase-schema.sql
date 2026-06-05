@@ -205,6 +205,68 @@ create trigger clients_updated_at
   before update on clients
   for each row execute procedure set_updated_at();
 
+-- ── Storage bucket + policies ────────────────────────────────────────────
+-- Creates the 'ca-documents' bucket (private, 10MB file limit)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'ca-documents',
+  'ca-documents',
+  false,
+  10485760,   -- 10MB in bytes
+  array['application/pdf','image/jpeg','image/png','image/jpg']
+)
+on conflict (id) do nothing;
+
+-- CA: upload files to their own folder  ({ca_id}/...)
+drop policy if exists "Storage: CA upload" on storage.objects;
+create policy "Storage: CA upload"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'ca-documents'
+    and auth.role() = 'authenticated'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- CA: read their own files
+drop policy if exists "Storage: CA read" on storage.objects;
+create policy "Storage: CA read"
+  on storage.objects for select
+  using (
+    bucket_id = 'ca-documents'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- CA: update their own files
+drop policy if exists "Storage: CA update" on storage.objects;
+create policy "Storage: CA update"
+  on storage.objects for update
+  using (
+    bucket_id = 'ca-documents'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- CA: delete their own files
+drop policy if exists "Storage: CA delete" on storage.objects;
+create policy "Storage: CA delete"
+  on storage.objects for delete
+  using (
+    bucket_id = 'ca-documents'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Portal clients (unauthenticated): upload only to portal/{token}/ folder.
+-- The 48-char token from crypto.getRandomValues() makes enumeration infeasible.
+-- For production, replace with an Edge Function that validates the token against
+-- the clients table before accepting the upload.
+drop policy if exists "Storage: portal upload" on storage.objects;
+create policy "Storage: portal upload"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'ca-documents'
+    and (storage.foldername(name))[1] = 'portal'
+    and length((storage.foldername(name))[2]) = 48  -- enforces our token length
+  );
+
 -- ── RLS verification queries (run these to confirm security) ──────────────
 -- After running the schema, open a new SQL Editor tab and run each block
 -- as the anon role to confirm cross-CA data leakage is impossible.

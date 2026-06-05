@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { uploadPortalDocument } from '../lib/supabase';
 import './ClientPortal.css';
 
 const getCASettings = () => {
@@ -21,7 +22,8 @@ const steps = [
 
 export default function ClientPortal({ client, onBack, showToast, isClientView = false, onDocumentUploaded }) {
   const [tab, setTab] = useState('home');
-  const [toast, setToast] = useState(null);
+  const [toast, setToast]       = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState('');
   const [paid, setPaid] = useState(client?.feePaid || false);
   const [showUpiModal, setShowUpiModal] = useState(false);
@@ -32,16 +34,33 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
 
   const showPortalToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  const handleFileChange = (e, targetDocName) => {
+  const handleFileChange = async (e, targetDocName) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { showPortalToast('File too large. Max 10MB.'); return; }
+
     const docName = targetDocName || client.documents.find(d => !d.uploaded)?.name || file.name;
-    const fileInfo = { fileName: file.name, fileType: file.type, fileSize: file.size };
-    if (onDocumentUploaded) {
-      onDocumentUploaded(client.id, docName, fileInfo);
+    setUploading(true);
+    showPortalToast('Uploading…');
+
+    let fileUrl = null;
+    const result = await uploadPortalDocument(file, client.portalToken, docName);
+    if (result.error) {
+      // Supabase not configured yet — fall back to local tracking only
+      if (result.error !== 'Supabase not configured') {
+        showPortalToast(`Upload failed: ${result.error}`);
+        setUploading(false);
+        e.target.value = '';
+        return;
+      }
+    } else {
+      fileUrl = result.path;
     }
-    showPortalToast(`✓ ${file.name} uploaded as "${docName}"`);
+
+    const fileInfo = { fileName: file.name, fileType: file.type, fileSize: file.size, fileUrl };
+    if (onDocumentUploaded) onDocumentUploaded(client.id, docName, fileInfo);
+    showPortalToast(`✓ ${file.name} uploaded`);
+    setUploading(false);
     e.target.value = '';
   };
 
@@ -163,11 +182,11 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
 
             {toast && <div className="upload-toast">{toast}</div>}
             <div className="ps-title" style={{marginTop:14}}>Upload document</div>
-            <label className="upload-zone">
+            <label className={`upload-zone ${uploading ? 'upload-zone-busy' : ''}`}>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
-                onChange={e => handleFileChange(e, null)} />
-              <div className="uz-icon">📤</div>
-              <div className="uz-text">Tap to upload</div>
+                disabled={uploading} onChange={e => handleFileChange(e, null)} />
+              <div className="uz-icon">{uploading ? '⏳' : '📤'}</div>
+              <div className="uz-text">{uploading ? 'Uploading…' : 'Tap to upload'}</div>
               <div className="uz-sub">PDF, JPG or PNG · max 10MB</div>
             </label>
           </>}
@@ -201,11 +220,11 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                 </div>
               ))}
             </div>
-            <label className="upload-zone">
+            <label className={`upload-zone ${uploading ? 'upload-zone-busy' : ''}`}>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
-                onChange={e => handleFileChange(e, null)} />
-              <div className="uz-icon">📤</div>
-              <div className="uz-text">Upload more documents</div>
+                disabled={uploading} onChange={e => handleFileChange(e, null)} />
+              <div className="uz-icon">{uploading ? '⏳' : '📤'}</div>
+              <div className="uz-text">{uploading ? 'Uploading…' : 'Upload more documents'}</div>
               <div className="uz-sub">PDF, JPG or PNG</div>
             </label>
           </>}
