@@ -6,12 +6,13 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose 
   const totalDocs = clients.reduce((s, c) => s + c.docsReceived, 0);
 
   const nav = [
-    { id: 'dashboard', icon: '⊞', label: 'Dashboard' },
-    { id: 'clients',   icon: '◎', label: 'Clients', count: String(clients.length) },
-    { id: 'documents', icon: '◫', label: 'Documents', count: String(totalDocs) },
-    { id: 'deadlines', icon: '◷', label: 'Deadlines', badge: 2 },
-    { id: 'invoices',  icon: '₹', label: 'Invoices', badge: unpaidCount || undefined },
-    { id: 'reminders', icon: '◉', label: 'Reminders', badge: docsMissing || undefined },
+    { id: 'dashboard',   icon: '⊞', label: 'Dashboard' },
+    { id: 'clients',     icon: '◎', label: 'Clients', count: String(clients.length) },
+    { id: 'documents',   icon: '◫', label: 'Documents', count: String(totalDocs) },
+    { id: 'deadlines',   icon: '◷', label: 'Deadlines', badge: 2 },
+    { id: 'invoices',    icon: '₹', label: 'Invoices', badge: unpaidCount || undefined },
+    { id: 'reminders',   icon: '◉', label: 'Reminders', badge: docsMissing || undefined },
+    { id: 'computation', icon: '⌗', label: 'Tax Compute' },
   ];
 
   const isActive = (id) => {
