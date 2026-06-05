@@ -3,10 +3,16 @@ import { deadlines } from '../data/mockData';
 import './Dashboard.css';
 
 const statusMap = {
-  filed:        { label: 'Filed',        cls: 'pill-green' },
-  under_review: { label: 'Under review', cls: 'pill-blue'  },
-  docs_pending: { label: 'Docs pending', cls: 'pill-red'   },
-  waiting_docs: { label: 'Waiting docs', cls: 'pill-amber' },
+  waiting_docs:     { label: 'Waiting docs',     cls: 'pill-amber'  },
+  docs_received:    { label: 'Docs received',    cls: 'pill-blue'   },
+  computation_done: { label: 'Computation done', cls: 'pill-blue'   },
+  return_prepared:  { label: 'Return prepared',  cls: 'pill-purple' },
+  client_approved:  { label: 'Client approved',  cls: 'pill-purple' },
+  filed:            { label: 'Filed',            cls: 'pill-green'  },
+  ack_received:     { label: 'Ack received',     cls: 'pill-green'  },
+  // legacy
+  docs_pending:     { label: 'Docs pending',     cls: 'pill-red'    },
+  under_review:     { label: 'Under review',     cls: 'pill-blue'   },
 };
 
 const docsInfo = c => {
@@ -17,11 +23,14 @@ const docsInfo = c => {
 };
 
 const statusFilters = [
-  { val: 'all',         label: 'All clients' },
-  { val: 'filed',       label: 'Filed' },
-  { val: 'under_review',label: 'Under review' },
-  { val: 'docs_pending',label: 'Docs pending' },
-  { val: 'waiting_docs',label: 'Waiting docs' },
+  { val: 'all',             label: 'All clients' },
+  { val: 'waiting_docs',    label: 'Waiting docs' },
+  { val: 'docs_received',   label: 'Docs received' },
+  { val: 'computation_done',label: 'Computation done' },
+  { val: 'return_prepared', label: 'Return prepared' },
+  { val: 'client_approved', label: 'Client approved' },
+  { val: 'filed',           label: 'Filed' },
+  { val: 'ack_received',    label: 'Ack received' },
 ];
 
 export default function Dashboard({ clients, onSelectClient, onAddClient, showToast, billing, onUpgrade }) {
@@ -37,8 +46,8 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
     return matchSearch && matchStatus;
   });
 
-  const filed   = clients.filter(c => c.status === 'filed').length;
-  const missing = clients.filter(c => c.status === 'docs_pending' || c.status === 'waiting_docs').length;
+  const filed   = clients.filter(c => c.status === 'filed' || c.status === 'ack_received').length;
+  const missing = clients.filter(c => c.status === 'waiting_docs' || c.status === 'docs_pending').length;
   const unpaidAmt = clients.filter(c => !c.feePaid).reduce((s, c) => s + c.feeAmount, 0);
 
   const toggleSelect = (id, e) => {
@@ -221,7 +230,7 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
             </div>
             {filtered.map(client => {
               const d = docsInfo(client);
-              const s = statusMap[client.status];
+              const s = statusMap[client.status] || { label: client.status, cls: 'pill-gray' };
               return (
                 <div className="table-row" key={client.id} onClick={() => onSelectClient(client)}>
                   <div className="tr-check">

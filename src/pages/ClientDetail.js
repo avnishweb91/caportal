@@ -5,11 +5,14 @@ import './ClientDetail.css';
 
 const dotColors = { green: 'var(--green)', blue: 'var(--accent)', amber: 'var(--amber)', gray: 'var(--bg4)', red: 'var(--red)' };
 
-const statusOptions = [
-  { val: 'waiting_docs', label: 'Waiting docs',  cls: 'pill-amber' },
-  { val: 'docs_pending', label: 'Docs pending',  cls: 'pill-red'   },
-  { val: 'under_review', label: 'Under review',  cls: 'pill-blue'  },
-  { val: 'filed',        label: 'Filed',         cls: 'pill-green' },
+const PIPELINE = [
+  { val: 'waiting_docs',     label: 'Waiting docs',     short: 'Waiting',   cls: 'pill-amber'  },
+  { val: 'docs_received',    label: 'Docs received',    short: 'Docs in',   cls: 'pill-blue'   },
+  { val: 'computation_done', label: 'Computation done', short: 'Computed',  cls: 'pill-blue'   },
+  { val: 'return_prepared',  label: 'Return prepared',  short: 'Prepared',  cls: 'pill-purple' },
+  { val: 'client_approved',  label: 'Client approved',  short: 'Approved',  cls: 'pill-purple' },
+  { val: 'filed',            label: 'Filed',            short: 'Filed',     cls: 'pill-green'  },
+  { val: 'ack_received',     label: 'Ack received',     short: 'Ack done',  cls: 'pill-green'  },
 ];
 
 export default function ClientDetail({ client, onBack, onUpdateClient, onArchive, onEdit, onViewPortal, onGoInvoices, showToast }) {
@@ -29,31 +32,25 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
 
   if (!client) return null;
 
-  const currentStatus = statusOptions.find(s => s.val === client.status) || statusOptions[0];
-
-  const markAsFiled = () => {
-    onUpdateClient(client.id, {
-      status: 'filed',
-      timeline: [
-        { action: 'ITR filed successfully', time: 'Just now', type: 'green' },
-        ...client.timeline,
-      ],
-    });
-    showToast(`${client.name} marked as filed`);
-  };
+  const currentIdx    = PIPELINE.findIndex(s => s.val === client.status);
+  const currentStatus = PIPELINE[currentIdx] || { val: client.status, label: client.status.replace(/_/g, ' '), cls: 'pill-gray' };
+  const isLastStep    = currentIdx === PIPELINE.length - 1;
+  const nextStep      = currentIdx >= 0 && !isLastStep ? PIPELINE[currentIdx + 1] : null;
 
   const changeStatus = (val) => {
-    const s = statusOptions.find(o => o.val === val);
+    const s = PIPELINE.find(o => o.val === val) || { label: val };
     onUpdateClient(client.id, {
       status: val,
       timeline: [
-        { action: `Status changed to "${s.label}"`, time: 'Just now', type: 'blue' },
+        { action: `Status: ${s.label}`, time: 'Just now', type: 'blue' },
         ...client.timeline,
       ],
     });
     setShowStatusMenu(false);
     showToast('Status updated');
   };
+
+  const advanceStep = () => { if (nextStep) changeStatus(nextStep.val); };
 
   const toggleFeePaid = () => {
     const next = !client.feePaid;
@@ -103,10 +100,10 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
             onClick={handleArchive}>
             {showArchiveConfirm ? 'Confirm archive?' : '◌ Archive'}
           </button>
-          <button className="btn btn-primary btn-sm" onClick={markAsFiled}
-            disabled={client.status === 'filed'}
-            style={client.status === 'filed' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
-            {client.status === 'filed' ? '✓ Filed' : 'Mark as filed ✓'}
+          <button className="btn btn-primary btn-sm" onClick={advanceStep}
+            disabled={isLastStep || currentIdx < 0}
+            style={(isLastStep || currentIdx < 0) ? { opacity: 0.55, cursor: 'not-allowed' } : {}}>
+            {isLastStep ? '✓ Complete' : nextStep ? `→ ${nextStep.label}` : '→ Advance'}
           </button>
         </div>
       </div>
@@ -133,7 +130,7 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
             </span>
             {showStatusMenu && (
               <div className="status-menu">
-                {statusOptions.map(s => (
+                {PIPELINE.map(s => (
                   <button key={s.val} className={`status-menu-item ${client.status === s.val ? 'active' : ''}`}
                     onClick={() => changeStatus(s.val)}>
                     <span className={`pill ${s.cls}`} style={{ pointerEvents: 'none' }}>{s.label}</span>
@@ -151,6 +148,32 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
           </span>
           <span className="pill pill-gray">{client.docsReceived}/{client.docsTotal} docs</span>
         </div>
+      </div>
+
+      <div className="wf-pipeline">
+        <div className="wf-steps">
+          {PIPELINE.flatMap((step, i) => {
+            const isDone = i < currentIdx;
+            const isCurrent = i === currentIdx;
+            const els = [
+              <button key={step.val}
+                className={`wf-step ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}`}
+                onClick={() => changeStatus(step.val)} title={`Set: ${step.label}`}>
+                <div className="wf-node">{isDone ? '✓' : i + 1}</div>
+                <div className="wf-label">{step.short}</div>
+              </button>
+            ];
+            if (i < PIPELINE.length - 1) {
+              els.push(<div key={`c${i}`} className={`wf-conn ${isDone ? 'done' : ''}`} />);
+            }
+            return els;
+          })}
+        </div>
+        {!isLastStep && currentIdx >= 0 && (
+          <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={advanceStep}>
+            → {nextStep?.label}
+          </button>
+        )}
       </div>
 
       <div className="detail-body">

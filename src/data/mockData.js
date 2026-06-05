@@ -2,7 +2,7 @@ export const clients = [
   {
     id: 1, portalToken: "pt_priya_sha_001", name: "Priya Sharma", pan: "ABCPS1234D",
     phone: "+91 98765 43210", email: "priya@example.com",
-    type: "Individual ITR", plan: "Pro", status: "under_review",
+    type: "Individual ITR", plan: "Pro", status: "return_prepared",
     docsReceived: 4, docsTotal: 5, feeAmount: 3500, feePaid: false,
     documents: [
       { name: "Form 16", uploaded: true, date: "Jun 1" },
@@ -22,7 +22,7 @@ export const clients = [
   {
     id: 2, portalToken: "pt_vikram_tex_002", name: "Vikram Textiles", pan: "AABFV5678K",
     phone: "+91 97654 32109", email: "accounts@vikramtextiles.com",
-    type: "GST + ITR", plan: "Starter", status: "docs_pending",
+    type: "GST + ITR", plan: "Starter", status: "docs_received",
     docsReceived: 3, docsTotal: 5, feeAmount: 8000, feePaid: false,
     documents: [
       { name: "GST returns", uploaded: true, date: "May 30" },
@@ -40,7 +40,7 @@ export const clients = [
   {
     id: 3, portalToken: "pt_anand_meh_003", name: "Anand Mehta", pan: "AAGPM9012F",
     phone: "+91 96543 21098", email: "anand.mehta@gmail.com",
-    type: "Individual ITR", plan: "Starter", status: "filed",
+    type: "Individual ITR", plan: "Starter", status: "ack_received",
     docsReceived: 4, docsTotal: 4, feeAmount: 2500, feePaid: true,
     documents: [
       { name: "Form 16", uploaded: true, date: "May 20" },
@@ -91,7 +91,7 @@ export const clients = [
   {
     id: 6, portalToken: "pt_suresh_006", name: "Suresh Patel", pan: "AABFP3456J",
     phone: "+91 93210 98765", email: "suresh.patel@gmail.com",
-    type: "GST + ITR", plan: "Pro", status: "docs_pending",
+    type: "GST + ITR", plan: "Pro", status: "waiting_docs",
     docsReceived: 2, docsTotal: 6, feeAmount: 9500, feePaid: false,
     documents: [
       { name: "GST returns", uploaded: true, date: "May 28" },
@@ -126,7 +126,7 @@ export const clients = [
   {
     id: 8, portalToken: "pt_ravishankar_008", name: "Ravi Shankar Enterprises", pan: "AABCR1234M",
     phone: "+91 91098 76543", email: "accounts@ravishankar.in",
-    type: "Company ITR", plan: "Firm", status: "under_review",
+    type: "Company ITR", plan: "Firm", status: "computation_done",
     docsReceived: 5, docsTotal: 7, feeAmount: 25000, feePaid: false,
     documents: [
       { name: "Balance sheet", uploaded: true, date: "Jun 1" },
