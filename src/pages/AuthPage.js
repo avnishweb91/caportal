@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabaseSignIn, supabaseSignUp, isSupabaseReady } from '../lib/supabase';
+import { supabaseSignIn, supabaseSignUp, supabaseResetPassword, supabaseUpdatePassword, isSupabaseReady } from '../lib/supabase';
 import './AuthPage.css';
 
 const DEMO = { email: 'support@caportal.co', password: 'demo1234', name: 'Rahul Mishra', role: 'CA · Bengaluru' };
@@ -97,7 +97,29 @@ export default function AuthPage({ onLogin, defaultTab = 'signin', onBack }) {
     }, 50);
   };
 
-  const submit = tab === 'signin' ? signIn : signUp;
+  const forgotPassword = async () => {
+    if (!form.email.trim()) { setErrors({ email: 'Email is required' }); return; }
+    setLoading(true);
+    const { error } = await supabaseResetPassword(form.email.trim());
+    setLoading(false);
+    if (error) { setErrors({ general: error.message }); return; }
+    setErrors({ general: '✓ Reset link sent — check your email.' });
+  };
+
+  const updatePassword = async () => {
+    if (!form.password) { setErrors({ password: 'Password is required' }); return; }
+    if (form.password.length < 8) { setErrors({ password: 'At least 8 characters' }); return; }
+    if (form.password !== form.confirm) { setErrors({ confirm: "Passwords don't match" }); return; }
+    setLoading(true);
+    const { error } = await supabaseUpdatePassword(form.password);
+    setLoading(false);
+    if (error) { setErrors({ general: error.message }); return; }
+    setErrors({ general: '✓ Password updated — sign in with your new password.' });
+    setTab('signin');
+    setForm(f => ({ ...f, password: '', confirm: '' }));
+  };
+
+  const submit = tab === 'signin' ? signIn : tab === 'signup' ? signUp : tab === 'forgot' ? forgotPassword : updatePassword;
 
   return (
     <div className="auth-root">
@@ -115,59 +137,114 @@ export default function AuthPage({ onLogin, defaultTab = 'signin', onBack }) {
         </div>
         <p className="auth-tagline-text">Modern practice management for Indian CAs</p>
 
-        <div className="auth-tabs">
-          <button className={`auth-tab ${tab === 'signin' ? 'active' : ''}`} onClick={() => setTab('signin')}>Sign in</button>
-          <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setTab('signup')}>Create account</button>
-        </div>
+        {!['forgot', 'reset'].includes(tab) && (
+          <div className="auth-tabs">
+            <button className={`auth-tab ${tab === 'signin' ? 'active' : ''}`} onClick={() => setTab('signin')}>Sign in</button>
+            <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setTab('signup')}>Create account</button>
+          </div>
+        )}
+
+        {['forgot', 'reset'].includes(tab) && (
+          <div className="auth-back-row">
+            <button className="auth-link-btn" onClick={() => setTab('signin')}>← Back to sign in</button>
+          </div>
+        )}
 
         {errors.general && <div className="auth-alert">{errors.general}</div>}
 
         <div className="auth-form">
-          {tab === 'signup' && (
-            <div className="form-group">
-              <label className="form-label">Your name</label>
-              <input className={`input ${errors.name ? 'input-error' : ''}`} placeholder="Rahul Mishra, CA"
-                value={form.name} onChange={e => set('name', e.target.value)} />
-              {errors.name && <span className="form-error">{errors.name}</span>}
-            </div>
-          )}
-          <div className="form-group">
-            <label className="form-label">Email address</label>
-            <input className={`input ${errors.email ? 'input-error' : ''}`} type="email" placeholder="you@yourfirm.com"
-              value={form.email} onChange={e => set('email', e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submit()} />
-            {errors.email && <span className="form-error">{errors.email}</span>}
-          </div>
-          <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <label className="form-label">Password</label>
-              {tab === 'signin' && <button className="auth-link-btn" type="button">Forgot password?</button>}
-            </div>
-            <input className={`input ${errors.password ? 'input-error' : ''}`} type="password"
-              placeholder={tab === 'signup' ? 'Min. 8 characters' : '••••••••'}
-              value={form.password} onChange={e => set('password', e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submit()} />
-            {errors.password && <span className="form-error">{errors.password}</span>}
-          </div>
-          {tab === 'signup' && (
-            <div className="form-group">
-              <label className="form-label">Confirm password</label>
-              <input className={`input ${errors.confirm ? 'input-error' : ''}`} type="password" placeholder="••••••••"
-                value={form.confirm} onChange={e => set('confirm', e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && signUp()} />
-              {errors.confirm && <span className="form-error">{errors.confirm}</span>}
-            </div>
+          {/* Forgot password */}
+          {tab === 'forgot' && (
+            <>
+              <p className="auth-hint">Enter your email and we'll send a reset link.</p>
+              <div className="form-group">
+                <label className="form-label">Email address</label>
+                <input className={`input ${errors.email ? 'input-error' : ''}`} type="email" placeholder="you@yourfirm.com"
+                  value={form.email} onChange={e => set('email', e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()} />
+                {errors.email && <span className="form-error">{errors.email}</span>}
+              </div>
+              <button className="btn btn-primary auth-submit" onClick={submit} disabled={loading}>
+                {loading ? <span className="auth-spinner" /> : 'Send reset link →'}
+              </button>
+            </>
           )}
 
-          <button className="btn btn-primary auth-submit" onClick={submit} disabled={loading}>
-            {loading ? <span className="auth-spinner" /> : tab === 'signin' ? 'Sign in →' : 'Create account →'}
-          </button>
+          {/* Set new password (after clicking email link) */}
+          {tab === 'reset' && (
+            <>
+              <p className="auth-hint">Enter your new password below.</p>
+              <div className="form-group">
+                <label className="form-label">New password</label>
+                <input className={`input ${errors.password ? 'input-error' : ''}`} type="password" placeholder="Min. 8 characters"
+                  value={form.password} onChange={e => set('password', e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()} />
+                {errors.password && <span className="form-error">{errors.password}</span>}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Confirm new password</label>
+                <input className={`input ${errors.confirm ? 'input-error' : ''}`} type="password" placeholder="••••••••"
+                  value={form.confirm} onChange={e => set('confirm', e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()} />
+                {errors.confirm && <span className="form-error">{errors.confirm}</span>}
+              </div>
+              <button className="btn btn-primary auth-submit" onClick={submit} disabled={loading}>
+                {loading ? <span className="auth-spinner" /> : 'Update password →'}
+              </button>
+            </>
+          )}
 
-          <div className="auth-divider"><span>or</span></div>
-
-          <button className="btn btn-ghost auth-demo-btn" onClick={useDemo} disabled={loading}>
-            ▷ &nbsp;Continue with demo account
-          </button>
+          {/* Sign in / Sign up */}
+          {!['forgot', 'reset'].includes(tab) && (
+            <>
+              {tab === 'signup' && (
+                <div className="form-group">
+                  <label className="form-label">Your name</label>
+                  <input className={`input ${errors.name ? 'input-error' : ''}`} placeholder="Rahul Mishra, CA"
+                    value={form.name} onChange={e => set('name', e.target.value)} />
+                  {errors.name && <span className="form-error">{errors.name}</span>}
+                </div>
+              )}
+              <div className="form-group">
+                <label className="form-label">Email address</label>
+                <input className={`input ${errors.email ? 'input-error' : ''}`} type="email" placeholder="you@yourfirm.com"
+                  value={form.email} onChange={e => set('email', e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()} />
+                {errors.email && <span className="form-error">{errors.email}</span>}
+              </div>
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="form-label">Password</label>
+                  {tab === 'signin' && (
+                    <button className="auth-link-btn" type="button" onClick={() => { setErrors({}); setTab('forgot'); }}>
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input className={`input ${errors.password ? 'input-error' : ''}`} type="password"
+                  placeholder={tab === 'signup' ? 'Min. 8 characters' : '••••••••'}
+                  value={form.password} onChange={e => set('password', e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()} />
+                {errors.password && <span className="form-error">{errors.password}</span>}
+              </div>
+              {tab === 'signup' && (
+                <div className="form-group">
+                  <label className="form-label">Confirm password</label>
+                  <input className={`input ${errors.confirm ? 'input-error' : ''}`} type="password" placeholder="••••••••"
+                    value={form.confirm} onChange={e => set('confirm', e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && signUp()} />
+                  {errors.confirm && <span className="form-error">{errors.confirm}</span>}
+                </div>
+              )}
+              <button className="btn btn-primary auth-submit" onClick={submit} disabled={loading}>
+                {loading ? <span className="auth-spinner" /> : tab === 'signin' ? 'Sign in →' : 'Create account →'}
+              </button>
+              <div className="auth-divider"><span>or</span></div>
+              <button className="btn btn-ghost auth-demo-btn" onClick={useDemo} disabled={loading}>
+                ▷ &nbsp;Continue with demo account
+              </button>
+            </>
+          )}
         </div>
 
         <p className="auth-legal">

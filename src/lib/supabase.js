@@ -28,6 +28,18 @@ export const supabaseGetUser = async () => {
   return data?.user || null;
 };
 
+export const supabaseResetPassword = async (email) => {
+  if (!supabase) return { error: { message: 'Supabase not configured' } };
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  });
+};
+
+export const supabaseUpdatePassword = async (newPassword) => {
+  if (!supabase) return { error: { message: 'Supabase not configured' } };
+  return supabase.auth.updateUser({ password: newPassword });
+};
+
 // ── Storage ───────────────────────────────────────────────────────────────
 const BUCKET = 'ca-documents';
 

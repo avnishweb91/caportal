@@ -20,6 +20,7 @@ import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
 import { getBillingStatus, ensureTrialStart, syncPlanFromSupabase } from './lib/billing';
+import { supabase } from './lib/supabase';
 import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
@@ -56,6 +57,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('ca_clients', JSON.stringify(clients));
   }, [clients]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthTab('reset');
+        setScreen('auth');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const showToast = (msg, type = 'success') => {
