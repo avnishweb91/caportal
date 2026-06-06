@@ -8,6 +8,11 @@
 
 -- profiles: add missing columns from older schema runs
 alter table if exists profiles
+  add column if not exists name text,
+  add column if not exists role text default 'CA',
+  add column if not exists firm_name text,
+  add column if not exists city text,
+  add column if not exists phone text,
   add column if not exists membership_no text,
   add column if not exists upi_id text,
   add column if not exists trial_start timestamptz default now(),
