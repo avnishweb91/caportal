@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseSignOut } from '../lib/supabase';
 import './AdminPage.css';
 
 const ADMIN_EMAIL = 'avnishweb91@gmail.com';
@@ -55,9 +55,14 @@ export default function AdminPage({ user }) {
           <div className="admin-title">Admin Dashboard</div>
           <div className="admin-subtitle">{user.email}</div>
         </div>
-        <button className="admin-refresh-btn" onClick={fetchStats} disabled={loading}>
-          {loading ? 'Loading…' : '↻ Refresh'}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="admin-refresh-btn" onClick={fetchStats} disabled={loading}>
+            {loading ? 'Loading…' : '↻ Refresh'}
+          </button>
+          <button className="admin-refresh-btn" onClick={async () => { await supabaseSignOut(); window.location.href = '/'; }}>
+            Sign out
+          </button>
+        </div>
       </div>
 
       {error && <div className="admin-error">{error}</div>}
