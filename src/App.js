@@ -24,9 +24,13 @@ import { supabase } from './lib/supabase';
 import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
-const getStoredClients = () => {
-  try { const s = localStorage.getItem('ca_clients'); return s ? JSON.parse(s) : seedClients; }
-  catch { return seedClients; }
+const getStoredClients = (userId) => {
+  try {
+    if (!userId) return seedClients; // demo account
+    const s = localStorage.getItem(`ca_clients_${userId}`);
+    return s ? JSON.parse(s) : [];
+  }
+  catch { return []; }
 };
 const getStoredAuth = () => {
   try { return JSON.parse(localStorage.getItem('ca_auth')); } catch { return null; }
@@ -36,7 +40,7 @@ export default function App() {
   // ALL hooks must be called unconditionally at the top
   const [user, setUser]               = useState(getStoredAuth);
   const [screen, setScreen]           = useState(() => getStoredAuth() ? 'dashboard' : 'landing');
-  const [clients, setClients]         = useState(getStoredClients);
+  const [clients, setClients]         = useState(() => getStoredClients(getStoredAuth()?.id));
   const [selectedClient, setSelected] = useState(null);
   const [sidebarTab, setSidebarTab]   = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,8 +59,8 @@ export default function App() {
   );
 
   useEffect(() => {
-    localStorage.setItem('ca_clients', JSON.stringify(clients));
-  }, [clients]);
+    if (user?.id) localStorage.setItem(`ca_clients_${user.id}`, JSON.stringify(clients));
+  }, [clients, user]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -77,6 +81,7 @@ export default function App() {
 
   const handleLogin = (u) => {
     setUser(u);
+    setClients(getStoredClients(u.id));
     if (u.email === 'avnishweb91@gmail.com') {
       localStorage.setItem('ca_billing', JSON.stringify({
         plan: 'firm',
