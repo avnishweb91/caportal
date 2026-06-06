@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getSettings } from '../lib/utils';
 import { PLANS, getBillingStatus, payForPlan, cancelPlan } from '../lib/billing';
+import { supabaseUpdateProfile } from '../lib/supabase';
 import './SettingsPage.css';
 
 const getProfile = () => {
@@ -35,12 +36,13 @@ export default function SettingsPage({ user, setUser, showToast }) {
   const setP = (k, v) => setProfile(p => ({ ...p, [k]: v }));
   const setK = (k, v) => setKeys(k2 => ({ ...k2, [k]: v }));
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     const extra = { firm: profile.firm, city: profile.city, phone: profile.phone };
     localStorage.setItem('ca_profile', JSON.stringify(extra));
-    const updatedAuth = { ...JSON.parse(localStorage.getItem('ca_auth') || '{}'), name: profile.name };
+    const updatedAuth = { ...JSON.parse(localStorage.getItem('ca_auth') || '{}'), name: profile.name, city: profile.city, firm: profile.firm };
     localStorage.setItem('ca_auth', JSON.stringify(updatedAuth));
-    setUser(u => ({ ...u, name: profile.name }));
+    setUser(u => ({ ...u, name: profile.name, city: profile.city, firm: profile.firm }));
+    await supabaseUpdateProfile({ name: profile.name, firm_name: profile.firm, city: profile.city, phone: profile.phone });
     showToast('Profile saved');
   };
 

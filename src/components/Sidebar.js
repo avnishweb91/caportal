@@ -78,7 +78,7 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose,
           </div>
           <div>
             <div className="sb-name">{user?.name || 'CA User'}</div>
-            <div className="sb-role">{user?.role || 'CA'}</div>
+            <div className="sb-role">{user?.city ? `CA · ${user.city}` : (user?.role || 'CA')}</div>
           </div>
         </div>
       </div>

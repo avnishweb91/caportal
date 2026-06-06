@@ -28,6 +28,27 @@ export const supabaseGetUser = async () => {
   return data?.user || null;
 };
 
+export const supabaseUpdateProfile = async (updates) => {
+  if (!supabase) return { error: { message: 'Supabase not configured' } };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: { message: 'Not logged in' } };
+  return supabase.from('profiles').update(updates).eq('id', user.id);
+};
+
+export const syncProfileFromSupabase = async () => {
+  if (!supabase) return null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase
+      .from('profiles')
+      .select('name, firm_name, city, phone, membership_no')
+      .eq('id', user.id)
+      .single();
+    return data || null;
+  } catch { return null; }
+};
+
 export const supabaseResetPassword = async (email) => {
   if (!supabase) return { error: { message: 'Supabase not configured' } };
   return supabase.auth.resetPasswordForEmail(email, {

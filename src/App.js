@@ -20,7 +20,7 @@ import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
 import { getBillingStatus, ensureTrialStart, syncPlanFromSupabase } from './lib/billing';
-import { supabase } from './lib/supabase';
+import { supabase, syncProfileFromSupabase } from './lib/supabase';
 import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
@@ -90,6 +90,13 @@ export default function App() {
     } else {
       ensureTrialStart(u);
       syncPlanFromSupabase();
+      syncProfileFromSupabase().then(data => {
+        if (data) {
+          const updated = { ...u, name: data.name || u.name, city: data.city, firm: data.firm_name };
+          localStorage.setItem('ca_auth', JSON.stringify(updated));
+          setUser(updated);
+        }
+      });
     }
     setScreen('dashboard');
     setSidebarTab('dashboard');
