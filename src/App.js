@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import AdminPage from './pages/AdminPage';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import AuthPage from './pages/AuthPage';
@@ -46,6 +47,7 @@ export default function App() {
 
   // Check URL for client portal token (must be after all hooks)
   const urlToken = useMemo(() => new URLSearchParams(window.location.search).get('portal'), []);
+  const isAdminPath = useMemo(() => window.location.pathname === '/admin', []);
   const portalAccessClient = useMemo(
     () => urlToken ? clients.find(c => c.portalToken === urlToken) : null,
     [urlToken, clients]
@@ -147,6 +149,12 @@ export default function App() {
         onLogout={handleLogout}
       />
     );
+  }
+
+  // ── Admin route ───────────────────────────────────────────────────────────
+  if (isAdminPath) {
+    if (!user) return <AuthPage onLogin={handleLogin} defaultTab="signin" onBack={() => { window.history.pushState({}, '', '/'); window.location.reload(); }} />;
+    return <AdminPage user={user} />;
   }
 
   // ── Client-facing portal (no auth needed) ────────────────────────────────

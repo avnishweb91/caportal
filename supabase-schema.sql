@@ -289,6 +289,45 @@ create policy "Storage: portal upload"
     and length((storage.foldername(name))[2]) = 48  -- enforces our token length
   );
 
+-- ── Admin stats RPC (run once in Supabase SQL Editor) ───────────────────────
+-- Returns signup stats + full user list. Only callable by avnishweb91@gmail.com.
+create or replace function admin_get_stats()
+returns json language plpgsql security definer as $$
+declare
+  calling_email text;
+begin
+  select email into calling_email from auth.users where id = auth.uid();
+  if calling_email is distinct from 'avnishweb91@gmail.com' then
+    raise exception 'Access denied';
+  end if;
+
+  return (
+    select json_build_object(
+      'total',      count(*),
+      'this_week',  count(*) filter (where p.created_at >= now() - interval '7 days'),
+      'this_month', count(*) filter (where p.created_at >= now() - interval '30 days'),
+      'trial',      count(*) filter (where p.plan = 'trial'),
+      'starter',    count(*) filter (where p.plan = 'starter'),
+      'pro',        count(*) filter (where p.plan = 'pro'),
+      'firm',       count(*) filter (where p.plan = 'firm'),
+      'users', coalesce(json_agg(
+        json_build_object(
+          'id',         p.id,
+          'name',       p.name,
+          'email',      u.email,
+          'plan',       p.plan,
+          'city',       p.city,
+          'firm_name',  p.firm_name,
+          'created_at', p.created_at
+        ) order by p.created_at desc
+      ) filter (where p.id is not null), '[]')
+    )
+    from profiles p
+    join auth.users u on u.id = p.id
+  );
+end;
+$$;
+
 -- ── RLS verification queries (run these to confirm security) ──────────────
 -- After running the schema, open a new SQL Editor tab and run each block
 -- as the anon role to confirm cross-CA data leakage is impossible.
