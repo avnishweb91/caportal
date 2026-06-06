@@ -59,7 +59,12 @@ export default function AdminPage({ user }) {
           <button className="admin-refresh-btn" onClick={fetchStats} disabled={loading}>
             {loading ? 'Loading…' : '↻ Refresh'}
           </button>
-          <button className="admin-refresh-btn" onClick={async () => { await supabaseSignOut(); window.location.href = '/admin'; }}>
+          <button className="admin-refresh-btn" onClick={async () => {
+  await supabaseSignOut();
+  localStorage.removeItem('ca_auth');
+  localStorage.removeItem('ca_billing');
+  window.location.href = '/admin';
+}}>
             Sign out
           </button>
         </div>
