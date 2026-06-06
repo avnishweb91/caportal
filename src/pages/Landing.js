@@ -13,6 +13,24 @@ const features = [
   { tag:'Records',     tagClass:'feat-tag-blue',   title:'Acknowledgment tracker',        desc:'Every ITR-V ack number, GST ARN, and TDS reference stored per client. Search across your entire practice by client name, PAN, or reference number in one place.' },
 ];
 
+const testimonials = [
+  {
+    name: 'Priya Sharma',
+    title: 'CA · Mumbai',
+    quote: 'I used to spend 2 hours every morning chasing documents on WhatsApp. Now my clients upload everything themselves. ITR season is actually manageable.',
+  },
+  {
+    name: 'Rajesh Mehta',
+    title: 'CA · Ahmedabad',
+    quote: 'The 7-step filing pipeline changed how I run my practice. I can see exactly where each of my 80 clients is in the process — no Excel, no calls.',
+  },
+  {
+    name: 'Ananya Krishnan',
+    title: 'CA · Bengaluru',
+    quote: 'Outstanding fees dropped after clients started paying directly through the portal. The UPI integration works exactly as advertised.',
+  },
+];
+
 const plans = [
   { tier:'Starter', price:'₹799', period:'/month · up to 30 clients', features:['Document portal','WhatsApp reminders','Filing status tracker','ITR/GST deadline calendar','Email support'], highlight:false },
   { tier:'Pro', price:'₹1,799', period:'/month · up to 100 clients', features:['Everything in Starter','Draft return approval flow','Fee invoicing + UPI payments','Practice analytics dashboard','Priority support'], highlight:true },
@@ -282,7 +300,6 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
     { label: 'Features', action: () => scrollTo('features') },
     { label: 'Pricing',  action: () => scrollTo('pricing')  },
     { label: 'About',    action: () => setActiveModal('about') },
-    { label: 'Blog',     action: () => setActiveModal('blog')  },
   ];
 
   const footerLinks = [
@@ -329,7 +346,7 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
 
       {/* STATS */}
       <div className="stats-bar">
-        {[['4L+','Registered CAs in India'],['₹0','WhatsApp doc chasing'],['2h','Saved per CA per day'],['47d','To ITR deadline']].map(([v,l])=>(
+        {[['Free','14-day trial · no card needed'],['₹0','Setup fee or lock-in'],['India','Data hosted · AWS Mumbai'],['ICAI','Built for Indian CAs']].map(([v,l])=>(
           <div className="stat-item" key={l}>
             <div className="stat-val"><span>{v}</span></div>
             <div className="stat-label">{l}</div>
@@ -379,6 +396,24 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
               <div className={`feat-tag ${f.tagClass}`}>{f.tag}</div>
               <div className="feat-title">{f.title}</div>
               <div className="feat-desc">{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* TESTIMONIALS */}
+      <div className="testimonials">
+        <div className="section-eyebrow">What CAs say</div>
+        <h2 className="section-h2">Trusted by CA practices across India</h2>
+        <div className="testi-grid">
+          {testimonials.map((t, i) => (
+            <div className="testi-card" key={i}>
+              <div className="testi-stars">★★★★★</div>
+              <div className="testi-quote">"{t.quote}"</div>
+              <div className="testi-author">
+                <div className="testi-name">{t.name}</div>
+                <div className="testi-title">{t.title}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -450,7 +485,6 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
               <div className="footer-col-title">Product</div>
               <button className="footer-col-link" onClick={() => scrollTo('features')}>Features</button>
               <button className="footer-col-link" onClick={() => scrollTo('pricing')}>Pricing</button>
-              <button className="footer-col-link" onClick={() => setActiveModal('blog')}>Blog</button>
               <button className="footer-col-link" onClick={() => onGetStarted('signup')}>Start free trial</button>
 
             </div>

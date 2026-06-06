@@ -96,6 +96,19 @@
 .feat-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .feat-desc { font-size: 12px; color: var(--text3); line-height: 1.7; }
 
+/* TESTIMONIALS */
+.testimonials { padding: 64px 40px; border-top: 1px solid var(--border); }
+.testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; }
+.testi-card {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.testi-stars { color: var(--amber); font-size: 13px; letter-spacing: 3px; }
+.testi-quote { font-size: 13px; color: var(--text2); line-height: 1.75; flex: 1; }
+.testi-name  { font-size: 13px; font-weight: 600; color: var(--text); }
+.testi-title { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
 /* PRICING */
 .pricing { padding: 64px 40px; background: var(--bg1); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; }
@@ -177,6 +190,8 @@
   .stat-item { flex: 1 1 50%; border-bottom: 1px solid var(--border); }
   .features { padding: 48px 20px; }
   .feat-grid { grid-template-columns: 1fr 1fr; }
+  .testimonials { padding: 48px 20px; }
+  .testi-grid { grid-template-columns: 1fr; }
   .pricing { padding: 48px 20px; }
   .pricing-grid { grid-template-columns: 1fr; }
   .cta-section { padding: 56px 20px; }
