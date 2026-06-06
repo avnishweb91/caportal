@@ -231,6 +231,8 @@ export default function App() {
             clients={clients}
             open={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
+            user={user}
+            billing={billing}
           />
         )}
         {showSidebar && sidebarOpen && (

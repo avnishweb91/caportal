@@ -20,7 +20,7 @@ const FAQS = [
   },
 ];
 
-export default function Sidebar({ active, onSelect, clients = [], open, onClose }) {
+export default function Sidebar({ active, onSelect, clients = [], open, onClose, user, billing }) {
   const [showHelp, setShowHelp] = useState(false);
   const [openFaq, setOpenFaq]   = useState(null);
   const docsMissing = clients.filter(c => c.status === 'docs_pending' || c.status === 'waiting_docs').length;
@@ -67,14 +67,18 @@ export default function Sidebar({ active, onSelect, clients = [], open, onClose 
       </div>
       <div className="sb-footer">
         <div className="sb-plan">
-          <span className="sb-plan-label">Pro plan</span>
-          <span className="sb-plan-badge">{clients.length}/100</span>
+          <span className="sb-plan-label">{billing?.planName || 'Free trial'}</span>
+          <span className="sb-plan-badge">
+            {billing?.clientLimit ? `${clients.length}/${billing.clientLimit}` : `${clients.length} clients`}
+          </span>
         </div>
         <div className="sb-profile">
-          <div className="sb-avatar">RM</div>
+          <div className="sb-avatar">
+            {user?.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'CA'}
+          </div>
           <div>
-            <div className="sb-name">Rahul Mishra</div>
-            <div className="sb-role">CA · Bengaluru</div>
+            <div className="sb-name">{user?.name || 'CA User'}</div>
+            <div className="sb-role">{user?.role || 'CA'}</div>
           </div>
         </div>
       </div>

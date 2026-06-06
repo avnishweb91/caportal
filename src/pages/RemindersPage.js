@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { reminderLog as initialLog } from '../data/mockData';
 
 const statusPill = { sent: 'pill-gray', delivered: 'pill-blue', read: 'pill-green' };
 
 export default function RemindersPage({ clients, showToast }) {
-  const [log, setLog] = useState(initialLog);
+  const [log, setLog] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [message, setMessage] = useState('');
   const [showCompose, setShowCompose] = useState(false);
