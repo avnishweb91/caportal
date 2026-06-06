@@ -10,7 +10,8 @@
 alter table if exists profiles
   add column if not exists membership_no text,
   add column if not exists upi_id text,
-  add column if not exists trial_start timestamptz default now();
+  add column if not exists trial_start timestamptz default now(),
+  add column if not exists plan_expiry timestamptz;
 
 -- clients: add portal_token if the column is missing from an older schema run
 alter table if exists clients
