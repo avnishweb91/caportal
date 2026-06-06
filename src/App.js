@@ -65,8 +65,15 @@ export default function App() {
 
   const handleLogin = (u) => {
     setUser(u);
-    ensureTrialStart(u);
-    syncPlanFromSupabase(); // pull latest plan from Supabase (async, no-wait)
+    if (u.email === 'avnishweb91@gmail.com') {
+      localStorage.setItem('ca_billing', JSON.stringify({
+        plan: 'firm',
+        planExpiry: new Date(2099, 0, 1).toISOString(),
+      }));
+    } else {
+      ensureTrialStart(u);
+      syncPlanFromSupabase();
+    }
     setScreen('dashboard');
     setSidebarTab('dashboard');
   };
