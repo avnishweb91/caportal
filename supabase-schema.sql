@@ -6,10 +6,11 @@
 -- If you ran an earlier version of this schema, these statements bring your
 -- existing tables up to date without touching existing data.
 
--- profiles: add membership_no and upi_id if missing
+-- profiles: add missing columns from older schema runs
 alter table if exists profiles
   add column if not exists membership_no text,
-  add column if not exists upi_id text;
+  add column if not exists upi_id text,
+  add column if not exists trial_start timestamptz default now();
 
 -- clients: add portal_token if the column is missing from an older schema run
 alter table if exists clients
