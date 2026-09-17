@@ -15,16 +15,13 @@ alter table if exists profiles
   add column if not exists phone text,
   add column if not exists membership_no text,
   add column if not exists upi_id text,
+  add column if not exists upi_name text,
   add column if not exists trial_start timestamptz default now(),
   add column if not exists plan_expiry timestamptz;
 
 -- clients: add portal_token if the column is missing from an older schema run
 alter table if exists clients
   add column if not exists portal_token text unique;
-
--- clients: drop the old catch-all policy (replaced by two separate policies)
-drop policy if exists "Clients: own rows only"    on clients;
-drop policy if exists "Clients: own CA rows only" on clients;
 
 -- acknowledgments: created below — this is a no-op if it already exists
 -- (handled by create table if not exists)
@@ -41,6 +38,7 @@ create table if not exists profiles (
   phone         text,
   membership_no text,
   upi_id        text,
+  upi_name      text,
   -- Billing
   plan          text default 'trial',        -- trial | starter | pro | firm
   plan_expiry   timestamptz,
@@ -89,8 +87,9 @@ create table if not exists subscription_payments (
 );
 alter table subscription_payments enable row level security;
 drop policy if exists "Sub payments: own rows only" on subscription_payments;
-create policy "Sub payments: own rows only"
-  on subscription_payments for all using (auth.uid() = ca_id);
+drop policy if exists "Subscription payments: own read" on subscription_payments;
+create policy "Subscription payments: own read"
+  on subscription_payments for select using (auth.uid() = ca_id);
 
 -- ── Clients ────────────────────────────────────────────────────────────────
 create table if not exists clients (
@@ -105,28 +104,33 @@ create table if not exists clients (
   status        text default 'waiting_docs',
   fee_amount    integer default 0,
   fee_paid      boolean default false,
+  fee_payment_status text default 'pending',
   docs_total    integer default 0,
   docs_received integer default 0,
   portal_token  text unique not null,
+  data          jsonb not null default '{}'::jsonb,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
 );
+alter table clients
+  add column if not exists fee_payment_status text default 'pending',
+  add column if not exists data jsonb not null default '{}'::jsonb;
+update clients set portal_token = replace(gen_random_uuid()::text, '-', '') where portal_token is null or portal_token = '';
+alter table clients alter column portal_token set not null;
 alter table clients enable row level security;
 
 -- CA can do everything on their own clients
+drop policy if exists "Clients: own rows only" on clients;
+drop policy if exists "Clients: own CA rows only" on clients;
 drop policy if exists "Clients: CA full access" on clients;
 create policy "Clients: CA full access"
   on clients for all
   using (auth.uid() = ca_id);
 
--- Client portal: read-only access via portal_token (no login required)
--- The token IS the secret — anyone with the URL can view the portal
+-- Do not expose every client row through the anon key. Portal-token access must
+-- be implemented through a server-side function that validates the presented
+-- token and returns only that client's explicitly approved fields.
 drop policy if exists "Clients: portal token read" on clients;
-create policy "Clients: portal token read"
-  on clients for select
-  using (portal_token is not null);
--- NOTE: in production, restrict this further with a Supabase Edge Function
--- that validates the token server-side before returning client data.
 
 -- ── Documents ──────────────────────────────────────────────────────────────
 create table if not exists documents (
@@ -141,23 +145,39 @@ create table if not exists documents (
 );
 alter table documents enable row level security;
 
+-- Preserve existing document rows when upgrading clients to the JSON payload
+-- used by the application. This is a no-op for rows already migrated.
+update clients c
+set data = jsonb_build_object(
+  'documents', coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'name', d.name, 'uploaded', d.uploaded, 'date', d.upload_date, 'fileInfo',
+      case when d.file_url is not null then jsonb_build_object('fileUrl', d.file_url) else null end
+    ) order by d.id)
+    from documents d where d.client_id = c.id
+  ), '[]'::jsonb),
+  'timeline', coalesce((
+    select jsonb_agg(jsonb_build_object('action', t.action, 'time', t.event_time, 'type', t.type) order by t.id desc)
+    from timeline_events t where t.client_id = c.id
+  ), '[]'::jsonb),
+  'acknowledgments', coalesce((
+    select jsonb_agg(jsonb_build_object('id', a.id, 'type', a.type, 'refNo', a.ref_no, 'period', a.period, 'filedDate', a.filed_date, 'notes', a.notes) order by a.id)
+    from acknowledgments a where a.client_id = c.id
+  ), '[]'::jsonb)
+)
+where c.data = '{}'::jsonb;
+
 -- CA: full access to their clients' documents
+drop policy if exists "Documents: own CA rows only" on documents;
 drop policy if exists "Documents: CA full access" on documents;
 create policy "Documents: CA full access"
   on documents for all
   using (auth.uid() = ca_id);
 
--- Portal: clients can mark their own document as uploaded (via client_id lookup)
--- They can UPDATE uploaded/file_url but cannot INSERT or DELETE rows
+-- Portal document writes require a server-side endpoint that validates the
+-- portal token and binds the upload to that client's document. A policy based
+-- only on portal_token IS NOT NULL grants access across all clients.
 drop policy if exists "Documents: portal upload" on documents;
-create policy "Documents: portal upload"
-  on documents for update
-  using (
-    client_id in (
-      select id from clients where portal_token is not null
-    )
-  )
-  with check (true);
 
 -- ── Timeline events ────────────────────────────────────────────────────────
 create table if not exists timeline_events (

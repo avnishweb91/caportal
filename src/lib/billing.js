@@ -148,39 +148,43 @@ export const syncPlanFromSupabase = async () => {
   }
 };
 
-// ── Push plan activation to Supabase (after client-side payment success) ──
-const pushPlanToSupabase = async (planId, expiry) => {
-  if (!supabase) return;
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('profiles').update({
-      plan:        planId,
-      plan_expiry: expiry,
-    }).eq('id', user.id);
-  } catch (e) {
-    console.warn('Could not push plan to Supabase:', e.message);
-  }
-};
-
 // ── Payment flow ─────────────────────────────────────────────────────────
 export const payForPlan = async (planId, caName, caEmail, onSuccess, onDismiss) => {
   const plan = PLANS[planId];
   if (!plan) return;
+  if (!supabase) {
+    onDismiss?.('Subscription checkout requires the Supabase payment function.');
+    return;
+  }
+  const { data: order, error: orderError } = await supabase.functions.invoke('subscription-payment', {
+    body: { action: 'create_order', planId },
+  });
+  if (orderError || !order?.orderId) {
+    onDismiss?.(orderError?.message || order?.error || 'Could not start secure checkout.');
+    return;
+  }
 
   await openPayment({
     amount:       plan.price,
+    orderId:      order.orderId,
     clientName:   caName  || 'CAPortal User',
     clientEmail:  caEmail || '',
     description:  `CAPortal ${plan.name} Plan — Monthly Subscription`,
-    notes: { planId, caEmail: caEmail || '' }, // webhook reads these
-    onSuccess: (resp) => {
+    onSuccess: async (resp) => {
+      const { data: verified, error } = await supabase.functions.invoke('subscription-payment', {
+        body: {
+          action: 'verify_payment',
+          orderId: resp.orderId,
+          paymentId: resp.paymentId,
+          signature: resp.signature,
+        },
+      });
+      if (error || !verified?.verified || verified.plan !== planId) {
+        onDismiss?.(error?.message || verified?.error || 'Payment could not be verified. Contact support before retrying.');
+        return;
+      }
       activatePlan(planId, resp.paymentId, plan.price);
-      // Also push to Supabase immediately (webhook is backup)
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30);
-      pushPlanToSupabase(planId, expiry.toISOString());
-      onSuccess?.(planId, resp);
+      onSuccess?.(planId, { ...resp, planExpiry: verified.planExpiry });
     },
     onDismiss,
   });

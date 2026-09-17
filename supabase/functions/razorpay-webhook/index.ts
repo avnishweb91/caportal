@@ -1,159 +1,125 @@
-// Razorpay Webhook Handler — CAPortal
-// Receives payment.captured events from Razorpay and activates CA plan in Supabase
-//
-// Deploy: npx supabase functions deploy razorpay-webhook --no-verify-jwt
-// Secrets: npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=your_secret
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// ── Plan mapping (amount in rupees → plan id) ──────────────────────────────
-const PLAN_BY_AMOUNT: Record<number, string> = {
-  799:  'starter',
-  1799: 'pro',
-  3499: 'firm',
+const PLAN_BY_AMOUNT: Record<number, string> = { 79900: 'starter', 179900: 'pro', 349900: 'firm' }
+
+async function getRazorpayOrder(orderId: string) {
+  const keyId = Deno.env.get('RAZORPAY_KEY_ID') ?? ''
+  const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
+  if (!keyId || !keySecret) throw new Error('Razorpay API credentials are not configured')
+  const response = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(orderId)}`, {
+    headers: { Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}` },
+  })
+  const order = await response.json()
+  if (!response.ok) throw new Error('Could not verify Razorpay order')
+  return order
 }
 
-// ── Verify Razorpay HMAC-SHA256 signature ─────────────────────────────────
-async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
+async function hmac(body: string, secret: string) {
   const encoder = new TextEncoder()
-  const key = await crypto.subtle.importKey(
-    'raw', encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign']
-  )
-  const mac    = await crypto.subtle.sign('HMAC', key, encoder.encode(body))
-  const digest = Array.from(new Uint8Array(mac))
-    .map(b => b.toString(16).padStart(2, '0')).join('')
-  return digest === signature
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(body))
+  return Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-// ── Main handler ───────────────────────────────────────────────────────────
+function constantTimeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return mismatch === 0
+}
+
 serve(async (req: Request) => {
-  // Only accept POST
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
-  }
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+  const secret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET') ?? ''
+  if (!secret) return new Response('Webhook secret not configured', { status: 500 })
 
-  const body      = await req.text()
+  const body = await req.text()
   const signature = req.headers.get('x-razorpay-signature') ?? ''
-  const secret    = Deno.env.get('RAZORPAY_WEBHOOK_SECRET') ?? ''
+  if (!constantTimeEqual(await hmac(body, secret), signature)) return new Response('Invalid signature', { status: 400 })
 
-  // Reject if secret not configured
-  if (!secret) {
-    console.error('RAZORPAY_WEBHOOK_SECRET not set')
-    return new Response('Webhook secret not configured', { status: 500 })
+  let event: any
+  try { event = JSON.parse(body) } catch { return new Response('Invalid JSON', { status: 400 }) }
+  if (event.event !== 'payment.captured') return new Response('Ignored', { status: 200 })
+  const payment = event.payload?.payment?.entity
+  if (!payment?.id || payment.status !== 'captured' || payment.currency !== 'INR') {
+    return new Response('Invalid payment entity', { status: 400 })
   }
 
-  // Verify signature
-  const valid = await verifySignature(body, signature, secret)
-  if (!valid) {
-    console.warn('Invalid Razorpay signature')
-    return new Response('Invalid signature', { status: 400 })
+  const amount = Number(payment.amount)
+  const amountPlan = PLAN_BY_AMOUNT[amount]
+  if (!payment.order_id) return new Response('Payment is missing an order', { status: 400 })
+  let order: any
+  try { order = await getRazorpayOrder(payment.order_id) }
+  catch (error) { console.error(error); return new Response('Could not verify payment order', { status: 502 }) }
+  const notes = order.notes ?? {}
+  const plan = notes.planId
+  if (order.amount !== amount || order.currency !== 'INR' || order.status !== 'paid') {
+    return new Response('Razorpay order does not match captured payment', { status: 400 })
   }
+  if (!amountPlan || plan !== amountPlan) return new Response('Payment amount does not match plan', { status: 400 })
 
-  // Parse event
-  let event: Record<string, unknown>
-  try {
-    event = JSON.parse(body)
-  } catch {
-    return new Response('Invalid JSON', { status: 400 })
-  }
-
-  const eventName = event.event as string
-  console.log('Razorpay event:', eventName)
-
-  // Only handle payment.captured
-  if (eventName !== 'payment.captured') {
-    return new Response('Ignored', { status: 200 })
-  }
-
-  const payment = (event.payload as Record<string, unknown>)
-    ?.payment as Record<string, unknown>
-  const entity  = payment?.entity as Record<string, unknown>
-
-  if (!entity) {
-    return new Response('No payment entity', { status: 400 })
-  }
-
-  // Extract details — notes are set by our frontend when checkout opens
-  const razorpayId = entity.id as string
-  const amountPaise = entity.amount as number
-  const amountRupees = Math.round(amountPaise / 100)
-  const notes   = (entity.notes as Record<string, string>) ?? {}
-  const caEmail = notes.caEmail || (entity.email as string) || ''
-  const planId  = notes.planId  || PLAN_BY_AMOUNT[amountRupees] || ''
-
-  if (!planId) {
-    console.error('Could not determine plan from amount:', amountRupees)
-    return new Response('Unknown plan amount', { status: 400 })
-  }
-
-  if (!caEmail) {
-    console.error('No CA email in payment')
-    return new Response('No CA email', { status: 400 })
-  }
-
-  // Init Supabase with service role (bypasses RLS)
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false } },
   )
+  const caUserId = notes.caUserId
+  let caId = typeof caUserId === 'string' ? caUserId : ''
+  let caEmail = typeof notes.caEmail === 'string' ? notes.caEmail.toLowerCase() : ''
 
-  // Find CA user by email
-  const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers()
-  if (usersError) {
-    console.error('Error listing users:', usersError.message)
-    return new Response('Error fetching users', { status: 500 })
-  }
+  if (caId) {
+    const { data, error } = await supabase.auth.admin.getUserById(caId)
+    if (error || !data.user) return new Response('CA account not found', { status: 404 })
+    caEmail = (data.user.email || '').toLowerCase()
+  } else if (caEmail) {
+    const { data: { users }, error } = await supabase.auth.admin.listUsers()
+    if (error) return new Response('Error fetching users', { status: 500 })
+    const user = users.find((item: any) => item.email?.toLowerCase() === caEmail)
+    if (!user) return new Response('CA account not found', { status: 404 })
+    caId = user.id
+    caEmail = (user.email || caEmail).toLowerCase()
+  } else return new Response('No CA account on payment', { status: 400 })
 
-  const caUser = users.find((u: Record<string, unknown>) => u.email === caEmail)
-  if (!caUser) {
-    console.error('No user found with email:', caEmail)
-    return new Response('CA not found', { status: 404 })
-  }
-
-  // Calculate plan expiry (30 days from now)
-  const planStart  = new Date()
-  const planExpiry = new Date()
-  planExpiry.setDate(planExpiry.getDate() + 30)
-
-  // Update profile with new plan
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .update({
-      plan:        planId,
-      plan_expiry: planExpiry.toISOString(),
+  const { data: priorPayment, error: lookupError } = await supabase
+    .from('subscription_payments').select('ca_id,plan,plan_expiry').eq('razorpay_id', payment.id).maybeSingle()
+  if (lookupError) return new Response('Could not check payment record', { status: 500 })
+  if (priorPayment) {
+    const { error: retryError } = await supabase.from('profiles').update({
+      plan: priorPayment.plan, plan_expiry: priorPayment.plan_expiry,
+    }).eq('id', priorPayment.ca_id)
+    if (retryError) return new Response('Could not activate plan', { status: 500 })
+    return new Response(JSON.stringify({ success: true, duplicate: true }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
     })
-    .eq('id', caUser.id)
+  }
 
+  const now = new Date()
+  const expiry = new Date(now)
+  expiry.setDate(expiry.getDate() + 30)
+  const { error: recordError } = await supabase.from('subscription_payments').insert({
+    ca_id: caId,
+    ca_email: caEmail,
+    razorpay_id: payment.id,
+    plan,
+    amount: amount / 100,
+    currency: 'INR',
+    status: 'captured',
+    plan_start: now.toISOString(),
+    plan_expiry: expiry.toISOString(),
+  })
+  if (recordError) return new Response('Could not record payment', { status: 500 })
+
+  const { error: profileError } = await supabase.from('profiles').update({
+    plan,
+    plan_expiry: expiry.toISOString(),
+  }).eq('id', caId)
   if (profileError) {
-    console.error('Error updating profile:', profileError.message)
-    return new Response('Error activating plan', { status: 500 })
+    console.error('Subscription plan activation failed after payment record', profileError.message)
+    return new Response('Could not activate plan', { status: 500 })
   }
 
-  // Record the subscription payment
-  const { error: paymentError } = await supabase
-    .from('subscription_payments')
-    .insert({
-      ca_id:       caUser.id,
-      ca_email:    caEmail,
-      razorpay_id: razorpayId,
-      plan:        planId,
-      amount:      amountRupees,
-      status:      'captured',
-      plan_start:  planStart.toISOString(),
-      plan_expiry: planExpiry.toISOString(),
-    })
-
-  if (paymentError && !paymentError.message.includes('duplicate')) {
-    console.error('Error recording payment:', paymentError.message)
-    // Don't fail — plan was already activated
-  }
-
-  console.log(`✓ Plan ${planId} activated for ${caEmail} until ${planExpiry.toISOString()}`)
-  return new Response(JSON.stringify({ success: true, plan: planId, expiry: planExpiry }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
+  return new Response(JSON.stringify({ success: true, plan, expiry: expiry.toISOString() }), {
+    status: 200, headers: { 'Content-Type': 'application/json' },
   })
 })

@@ -172,3 +172,18 @@ describe('environment variable security', () => {
     expect(realKeyPattern.test(content)).toBe(false);
   });
 });
+
+describe('portal database policy security', () => {
+  const schema = fs.readFileSync(path.join(__dirname, '..', '..', 'supabase-schema.sql'), 'utf8');
+
+  test('does not grant anonymous users access to every client with a portal token', () => {
+    expect(schema).toContain('drop policy if exists "Clients: portal token read" on clients;');
+    expect(schema).not.toMatch(/create policy\s+"Clients: portal token read"/i);
+  });
+
+  test('does not grant portal users updates to other clients’ documents', () => {
+    expect(schema).toContain('drop policy if exists "Documents: portal upload" on documents;');
+    expect(schema).toContain('drop policy if exists "Documents: own CA rows only" on documents;');
+    expect(schema).not.toMatch(/create policy\s+"Documents: portal upload"/i);
+  });
+});

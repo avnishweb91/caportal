@@ -1,4 +1,5 @@
-import { getBillingStatus, ensureTrialStart, activatePlan, cancelPlan, PLANS } from '../billing';
+import { getBillingStatus, ensureTrialStart, activatePlan, cancelPlan, PLANS, payForPlan } from '../billing';
+import { openPayment } from '../razorpay';
 
 jest.mock('../razorpay', () => ({ openPayment: jest.fn() }));
 jest.mock('../supabase', () => ({ supabase: null }));
@@ -151,5 +152,15 @@ describe('PLANS', () => {
       expect(Array.isArray(p.features)).toBe(true);
       expect(p.features.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('payForPlan', () => {
+  test('does not open checkout or activate locally without the server payment function', async () => {
+    const dismissed = jest.fn();
+    await payForPlan('starter', 'CA', 'ca@example.com', jest.fn(), dismissed);
+    expect(openPayment).not.toHaveBeenCalled();
+    expect(dismissed).toHaveBeenCalledWith(expect.stringContaining('Supabase payment function'));
+    expect(JSON.parse(localStorage.getItem('ca_billing') || '{}').plan).toBeUndefined();
   });
 });

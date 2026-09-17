@@ -12,7 +12,7 @@ const getProfile = () => {
   } catch { return {}; }
 };
 
-export default function SettingsPage({ user, setUser, showToast }) {
+export default function SettingsPage({ user, setUser, clients = [], onClearClients, showToast }) {
   const savedProfile = getProfile();
   const savedSettings = getSettings();
 
@@ -42,19 +42,20 @@ export default function SettingsPage({ user, setUser, showToast }) {
     const updatedAuth = { ...JSON.parse(localStorage.getItem('ca_auth') || '{}'), name: profile.name, city: profile.city, firm: profile.firm };
     localStorage.setItem('ca_auth', JSON.stringify(updatedAuth));
     setUser(u => ({ ...u, name: profile.name, city: profile.city, firm: profile.firm }));
-    await supabaseUpdateProfile({ name: profile.name, firm_name: profile.firm, city: profile.city, phone: profile.phone });
-    showToast('Profile saved');
+    const { error } = await supabaseUpdateProfile({ name: profile.name, firm_name: profile.firm, city: profile.city, phone: profile.phone });
+    showToast(error ? `Profile sync failed: ${error.message}` : 'Profile saved', error ? 'error' : 'success');
   };
 
-  const saveKeys = () => {
+  const saveKeys = async () => {
     localStorage.setItem('ca_settings', JSON.stringify(keys));
-    showToast('Integration keys saved');
+    const { error } = await supabaseUpdateProfile({ upi_id: keys.upiId || null, upi_name: keys.upiName || null });
+    showToast(error ? `UPI settings sync failed: ${error.message}` : 'UPI settings saved', error ? 'error' : 'success');
   };
 
   const exportData = () => {
     const data = {
       profile,
-      clients: JSON.parse(localStorage.getItem('ca_clients') || '[]'),
+      clients,
       reminders: JSON.parse(localStorage.getItem('ca_reminders') || '[]'),
       exportedAt: new Date().toISOString(),
     };
@@ -66,10 +67,9 @@ export default function SettingsPage({ user, setUser, showToast }) {
     showToast('Data exported');
   };
 
-  const clearData = () => {
+  const clearData = async () => {
     if (!window.confirm('This will delete ALL client data. Are you sure?')) return;
-    localStorage.removeItem('ca_clients');
-    showToast('All client data cleared. Reload to see the empty state.');
+    await onClearClients?.();
   };
 
   const initials = profile.name

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { uploadPortalDocument } from '../lib/supabase';
+import { uploadPortalDocument, reportPortalPayment } from '../lib/supabase';
 import './ClientPortal.css';
 
 const getCASettings = () => {
@@ -20,12 +20,13 @@ const steps = [
   { label:'ITR filed',              time:'Pending',done:false, active:false },
 ];
 
-export default function ClientPortal({ client, onBack, showToast, isClientView = false, onDocumentUploaded }) {
+export default function ClientPortal({ client, onBack, showToast, isClientView = false, onDocumentUploaded, onReportPayment }) {
   const [tab, setTab] = useState('home');
   const [toast, setToast]       = useState(null);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState('');
-  const [paid, setPaid] = useState(client?.feePaid || false);
+  const [reportingPayment, setReportingPayment] = useState(false);
+  const paid = !!client?.feePaid;
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [msgs, setMsgs] = useState([
     { text:"Hi! Please upload your rent receipts when you get a chance — it's the last document we need.", from:'ca' },
@@ -38,6 +39,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { showPortalToast('File too large. Max 10MB.'); return; }
+    if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) { showPortalToast('Choose a PDF, JPG or PNG file.'); return; }
 
     const docName = targetDocName || client.documents.find(d => !d.uploaded)?.name || file.name;
     setUploading(true);
@@ -57,11 +59,22 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
       fileUrl = result.path;
     }
 
-    const fileInfo = { fileName: file.name, fileType: file.type, fileSize: file.size, fileUrl };
-    if (onDocumentUploaded) onDocumentUploaded(client.id, docName, fileInfo);
+    const fileInfo = result.fileInfo || { fileName: file.name, fileType: file.type, fileSize: file.size, fileUrl };
+    if (result.client) onDocumentUploaded?.(result.client);
+    else if (onDocumentUploaded) onDocumentUploaded(client.id, docName, fileInfo);
     showPortalToast(`✓ ${file.name} uploaded`);
     setUploading(false);
     e.target.value = '';
+  };
+
+  const handleReportPayment = async () => {
+    setReportingPayment(true);
+    const result = await reportPortalPayment(client.portalToken);
+    setReportingPayment(false);
+    if (result.error) { showPortalToast(`Could not report payment: ${result.error}`); return; }
+    onReportPayment?.(result.data.client);
+    setShowUpiModal(false);
+    showPortalToast('Payment reported. Your CA will confirm it.');
   };
 
 
@@ -72,8 +85,8 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
   };
 
   const caSettings = getCASettings();
-  const upiId   = caSettings.upiId   || '';
-  const upiName = caSettings.upiName || 'Your CA';
+  const upiId   = client.upiId || caSettings.upiId || '';
+  const upiName = client.upiName || caSettings.upiName || 'Your CA';
 
   const handlePayFee = () => {
     if (!upiId) { showPortalToast('Payment not set up yet — contact your CA'); return; }
@@ -126,7 +139,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             </div>
 
             {/* Fee payment card */}
-            {!paid && client.feeAmount > 0 && upiId && (
+            {!paid && client.feePaymentStatus !== 'reported' && client.feeAmount > 0 && upiId && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
                   <div className="pfc-label">Professional fee</div>
@@ -137,6 +150,15 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                   ? <button className="pfc-btn" onClick={handlePayFee}>Pay via UPI →</button>
                   : <button className="pfc-btn" onClick={() => setShowUpiModal(true)}>Pay ₹{client.feeAmount.toLocaleString()} →</button>
                 }
+              </div>
+            )}
+            {!paid && client.feePaymentStatus === 'reported' && (
+              <div className="portal-fee-card">
+                <div className="pfc-left">
+                  <div className="pfc-label">Professional fee</div>
+                  <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
+                </div>
+                <span style={{fontSize:12,color:'var(--amber)',fontWeight:600}}>Payment reported · awaiting CA confirmation</span>
               </div>
             )}
             {paid && (
@@ -172,12 +194,17 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                     <span className="upi-id-label">Amount</span>
                     <span className="upi-id-val" style={{color:'var(--green)',fontWeight:700}}>₹{client.feeAmount.toLocaleString()}</span>
                   </div>
-                  <button className="upi-paid-btn" onClick={() => { setPaid(true); setShowUpiModal(false); showPortalToast('Thank you! Your CA will confirm the payment.'); }}>
-                    I have paid ✓
+                  <button className="upi-paid-btn" disabled={reportingPayment} onClick={handleReportPayment}>
+                    {reportingPayment ? 'Sending…' : 'I have paid · notify my CA'}
                   </button>
                   <button className="upi-close-btn" onClick={() => setShowUpiModal(false)}>Cancel</button>
                 </div>
               </div>
+            )}
+            {!paid && client.feeAmount > 0 && upiId && client.feePaymentStatus !== 'reported' && (
+              <button className="upi-paid-btn" style={{width:'100%', marginTop:8}} disabled={reportingPayment} onClick={handleReportPayment}>
+                {reportingPayment ? 'Sending…' : 'I have paid · notify my CA'}
+              </button>
             )}
 
             {toast && <div className="upload-toast">{toast}</div>}

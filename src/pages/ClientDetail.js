@@ -59,6 +59,7 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
     const next = !client.feePaid;
     onUpdateClient(client.id, {
       feePaid: next,
+      feePaymentStatus: next ? 'paid' : 'pending',
       timeline: [
         { action: next ? `Fee ₹${client.feeAmount.toLocaleString()} marked as paid` : 'Fee marked as unpaid', time: 'Just now', type: next ? 'green' : 'amber' },
         ...client.timeline,

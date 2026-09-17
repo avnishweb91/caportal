@@ -72,13 +72,13 @@ Per-client storage of ITR-V ack numbers, GST ARNs (GSTR-1/3B), TDS return tokens
 
 **Subscription billing**
 14-day free trial → plan selection wall → Razorpay checkout
-Webhook via Supabase Edge Function verifies payment and activates plan in database.
+Checkout creates an order on a Supabase Edge Function. The payment signature and captured payment are verified server-side before activating a plan. A signed webhook provides retry-safe backup activation.
 
 **UPI payments for client fees**
 CA enters their UPI ID in Settings → Integrations. When client opens portal → "Pay ₹X" button opens GPay/PhonePe/Paytm on phone, or shows QR code on desktop. Money goes directly to CA's bank via NPCI. No API keys needed for CA.
 
 **Real file upload**
-Client taps upload zone → file picker opens → PDF/JPG/PNG selected → document marked received on CA's dashboard.
+Client portal links resolve through a Supabase Edge Function using the portal token. The function validates file type and size, uploads into the CA's private storage folder, and updates the same client record the CA dashboard reads.
 
 **Invoice PDF**
 Client Detail → "Download invoice" → professional invoice opens in new tab → save as PDF.
@@ -202,9 +202,9 @@ Demo login: `support@caportal.co` / `demo1234`
 
 ## Database Setup
 
-1. Go to **supabase.com** → your project → SQL Editor
-2. Paste contents of `supabase-schema.sql` → Run
-3. Safe to re-run — uses `IF NOT EXISTS` and `OR REPLACE` throughout
+1. Go to **supabase.com** → your project → SQL Editor.
+2. Run the current `supabase-schema.sql` migration. It removes the unsafe public portal policies and adds the client payload and payment status columns.
+3. Deploy the functions below and set their secrets. Existing local client data is uploaded on the CA's next sign-in if the account has no database client rows.
 
 ---
 
@@ -212,9 +212,13 @@ Demo login: `support@caportal.co` / `demo1234`
 
 ```bash
 npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=your_secret
+npx supabase secrets set RAZORPAY_KEY_ID=rzp_live_... RAZORPAY_KEY_SECRET=... RAZORPAY_WEBHOOK_SECRET=...
+npx supabase functions deploy client-portal
+npx supabase functions deploy subscription-payment
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
 ```
+
+`subscription-payment` requires a signed-in Supabase user. Keep the Razorpay secret and webhook secret in Supabase function secrets only. The React app needs the public Razorpay key ID and Supabase URL/anon key in Vercel environment variables, followed by a production rebuild. Configure the Razorpay webhook to send `payment.captured` to `https://YOUR_REF.supabase.co/functions/v1/razorpay-webhook`.
 
 Register in Razorpay → Settings → Webhooks:
 - URL: `https://YOUR_REF.supabase.co/functions/v1/razorpay-webhook`

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { openPayment } from '../lib/razorpay';
 import './InvoicesPage.css';
 
 export default function InvoicesPage({ clients, onUpdateClient, onSelectClient, showToast }) {
   const [filter, setFilter] = useState('all');
   const [collecting, setCollecting] = useState(null);
+  const [upiInvoice, setUpiInvoice] = useState(null);
 
   const invoices = clients.map(c => ({
     clientId: c.id, clientName: c.name, pan: c.pan,
     phone: c.phone || '', email: c.email || '',
     amount: c.feeAmount, paid: c.feePaid,
+    paymentReported: c.feePaymentStatus === 'reported',
     type: c.type + ' FY 2025–26', plan: c.plan,
   }));
 
@@ -22,26 +23,29 @@ export default function InvoicesPage({ clients, onUpdateClient, onSelectClient, 
   const totalAll       = invoices.reduce((s, i) => s + i.amount, 0);
 
   const togglePaid = (clientId, currentPaid) => {
-    onUpdateClient(clientId, { feePaid: !currentPaid });
+    onUpdateClient(clientId, { feePaid: !currentPaid, feePaymentStatus: currentPaid ? 'pending' : 'paid' });
     showToast(!currentPaid ? 'Fee marked as paid' : 'Fee marked as unpaid');
   };
 
   const handleCollect = async (inv) => {
     setCollecting(inv.clientId);
-    await openPayment({
-      amount:       inv.amount,
-      clientName:   inv.clientName,
-      clientEmail:  inv.email,
-      clientPhone:  inv.phone,
-      description:  inv.type,
-      onSuccess: (resp) => {
-        onUpdateClient(inv.clientId, { feePaid: true });
-        showToast(`₹${inv.amount.toLocaleString()} collected from ${inv.clientName} · ID: ${resp.paymentId}`);
-      },
-      onDismiss: (msg) => {
-        if (msg) showToast(msg, 'error');
-      },
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem('ca_settings') || '{}'); } catch { settings = {}; }
+    if (!settings.upiId) {
+      showToast('Add your UPI ID in Settings → Integrations first.', 'error');
+      setCollecting(null);
+      return;
+    }
+    const params = new URLSearchParams({
+      pa: settings.upiId,
+      pn: settings.upiName || 'Your CA',
+      am: String(inv.amount),
+      tn: `${inv.clientName} · ${inv.type}`,
+      cu: 'INR',
     });
+    const link = `upi://pay?${params.toString()}`;
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) window.location.href = link;
+    else setUpiInvoice({ ...inv, upiId: settings.upiId, upiName: settings.upiName || 'Your CA', link });
     setCollecting(null);
   };
 
@@ -115,8 +119,8 @@ export default function InvoicesPage({ clients, onUpdateClient, onSelectClient, 
                 </span>
               </div>
               <div className="inv-td">
-                <span className={`pill ${inv.paid ? 'pill-green' : 'pill-amber'}`}>
-                  {inv.paid ? '✓ Paid' : 'Pending'}
+                <span className={`pill ${inv.paid ? 'pill-green' : inv.paymentReported ? 'pill-blue' : 'pill-amber'}`}>
+                  {inv.paid ? '✓ Paid' : inv.paymentReported ? 'Reported · confirm' : 'Pending'}
                 </span>
               </div>
               <div className="inv-td" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -127,14 +131,14 @@ export default function InvoicesPage({ clients, onUpdateClient, onSelectClient, 
                     className="btn btn-primary btn-sm"
                     disabled={collecting === inv.clientId}
                     onClick={() => handleCollect(inv)}
-                    title="Opens Razorpay checkout — add REACT_APP_RAZORPAY_KEY in .env">
-                    {collecting === inv.clientId ? '…' : '₹ Collect'}
+                    title="Creates a UPI payment request. Confirm payment after it reaches your bank.">
+                    {collecting === inv.clientId ? '…' : '₹ UPI'}
                   </button>
                 )}
                 <button className={`btn btn-sm ${inv.paid ? 'btn-ghost' : 'btn-ghost'}`}
                   style={{ fontSize: 10, color: 'var(--text3)' }}
                   onClick={() => togglePaid(inv.clientId, inv.paid)}>
-                  {inv.paid ? 'Unmark' : 'Manual ✓'}
+                  {inv.paid ? 'Unmark' : inv.paymentReported ? 'Confirm paid ✓' : 'Manual ✓'}
                 </button>
               </div>
             </div>
@@ -148,10 +152,22 @@ export default function InvoicesPage({ clients, onUpdateClient, onSelectClient, 
 
         <div className="inv-note">
           <span style={{ color: 'var(--text3)', fontSize: 10 }}>
-            ⓘ &nbsp;"₹ Collect" opens Razorpay checkout. Add <code style={{ fontFamily: 'var(--mono)', background: 'var(--bg3)', padding: '1px 4px', borderRadius: 3 }}>REACT_APP_RAZORPAY_KEY</code> in <code style={{ fontFamily: 'var(--mono)', background: 'var(--bg3)', padding: '1px 4px', borderRadius: 3 }}>.env</code> to activate. Get your key at razorpay.com.
+            ⓘ &nbsp;UPI transfers are confirmed manually. Mark an invoice paid only after you verify the payment in your bank or UPI app.
           </span>
         </div>
       </div>
+      {upiInvoice && (
+        <div role="dialog" aria-modal="true" className="upi-modal-overlay" onClick={() => setUpiInvoice(null)}>
+          <div className="upi-modal" onClick={event => event.stopPropagation()}>
+            <div className="upi-modal-title">Collect ₹{upiInvoice.amount.toLocaleString()}</div>
+            <div className="upi-modal-sub">{upiInvoice.clientName} · Scan with any UPI app</div>
+            <img className="upi-qr" alt="UPI payment QR code" src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiInvoice.link)}`} />
+            <div className="upi-id-row"><span className="upi-id-label">UPI ID</span><span className="upi-id-val">{upiInvoice.upiId}</span></div>
+            <div className="upi-amount-row"><span className="upi-id-label">Status</span><span className="upi-id-val">Awaiting bank confirmation</span></div>
+            <button className="upi-close-btn" onClick={() => setUpiInvoice(null)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

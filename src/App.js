@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import AdminPage from './pages/AdminPage';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -20,7 +20,7 @@ import ClientFormModal from './components/ClientFormModal';
 import { clients as seedClients } from './data/mockData';
 import { generateToken } from './lib/utils';
 import { getBillingStatus, ensureTrialStart, syncPlanFromSupabase } from './lib/billing';
-import { supabase, syncProfileFromSupabase } from './lib/supabase';
+import { supabase, syncProfileFromSupabase, loadClients, saveClients, deleteClient, deleteAllClients, loadPortalClient } from './lib/supabase';
 import PlanSelectPage from './pages/PlanSelectPage';
 import './App.css';
 
@@ -49,11 +49,16 @@ export default function App() {
   const [portalPreview, setPortalPreview] = useState(null);
   const [toast, setToast]             = useState(null);
   const [authTab, setAuthTab]         = useState('signin');
+  const [clientsReady, setClientsReady] = useState(() => !supabase || !getStoredAuth()?.id);
+  const [portalClient, setPortalClient] = useState(null);
+  const [portalError, setPortalError] = useState('');
+  const [portalLoading, setPortalLoading] = useState(false);
+  const clientSaveQueue = useRef(Promise.resolve());
 
   // Check URL for client portal token (must be after all hooks)
   const urlToken = useMemo(() => new URLSearchParams(window.location.search).get('portal'), []);
   const isAdminPath = useMemo(() => window.location.pathname === '/admin', []);
-  const portalAccessClient = useMemo(
+  const localPortalClient = useMemo(
     () => urlToken ? clients.find(c => c.portalToken === urlToken) : null,
     [urlToken, clients]
   );
@@ -61,6 +66,70 @@ export default function App() {
   useEffect(() => {
     if (user?.id) localStorage.setItem(`ca_clients_${user.id}`, JSON.stringify(clients));
   }, [clients, user]);
+
+  useEffect(() => {
+    if (!user?.id || !supabase) { setClientsReady(true); return undefined; }
+    let active = true;
+    setClientsReady(false);
+    (async () => {
+      const remote = await loadClients(user.id);
+      if (!active) return;
+      if (remote.error) {
+        setPortalError('');
+        showToast(`Could not load saved clients: ${remote.error}`, 'error');
+        return;
+      }
+      const cached = getStoredClients(user.id);
+      if (remote.data.length) {
+        const tokens = new Set(remote.data.map(client => client.portalToken));
+        const missingFromDatabase = cached.filter(client => !tokens.has(client.portalToken));
+        if (missingFromDatabase.length) {
+          const merged = await saveClients(user.id, [...remote.data, ...missingFromDatabase]);
+          if (active && !merged.error) setClients(merged.data);
+          else if (active && merged.error) {
+            setClients(remote.data);
+            showToast(`Could not sync local clients: ${merged.error}`, 'error');
+          }
+        } else setClients(remote.data);
+      } else {
+        if (cached.length) {
+          const migrated = await saveClients(user.id, cached);
+          if (active && !migrated.error) setClients(migrated.data);
+          else if (active && migrated.error) showToast(`Could not sync local clients: ${migrated.error}`, 'error');
+        } else setClients([]);
+      }
+      if (active) setClientsReady(true);
+    })();
+    return () => { active = false; };
+    // Loading must run only when the authenticated account changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!clientsReady || !user?.id || !supabase) return;
+    let active = true;
+    const snapshot = clients;
+    clientSaveQueue.current = clientSaveQueue.current.catch(() => {}).then(() => saveClients(user.id, snapshot)).then(result => {
+      if (active && result.error) showToast(`Could not save client changes: ${result.error}`, 'error');
+      if (active && result.data && result.data.some((c, i) => String(c.id) !== String(snapshot[i]?.id))) setClients(result.data);
+    });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, clientsReady, user?.id]);
+
+  useEffect(() => {
+    if (!urlToken) return undefined;
+    if (!supabase) return undefined;
+    let active = true;
+    setPortalLoading(true);
+    loadPortalClient(urlToken).then(result => {
+      if (!active) return;
+      setPortalClient(result.data);
+      setPortalError(result.error || (result.data ? '' : 'This portal link is invalid or has expired.'));
+      setPortalLoading(false);
+    });
+    return () => { active = false; };
+  }, [urlToken]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -82,6 +151,7 @@ export default function App() {
   const handleLogin = (u) => {
     setUser(u);
     setClients(getStoredClients(u.id));
+    setClientsReady(!supabase || !u.id);
     if (u.email === 'avnishweb91@gmail.com') {
       localStorage.setItem('ca_billing', JSON.stringify({
         plan: 'firm',
@@ -142,9 +212,24 @@ export default function App() {
 
   const archiveClient = (id) => {
     const c = clients.find(c => c.id === id);
+    if (user?.id && c?.portalToken && supabase) {
+      clientSaveQueue.current = clientSaveQueue.current.catch(() => {}).then(() => deleteClient(user.id, c.portalToken)).then(({ error }) => {
+        if (error) showToast(`Could not archive client: ${error}`, 'error');
+      });
+    }
     setClients(prev => prev.filter(c => c.id !== id));
     setScreen('dashboard'); setSidebarTab('dashboard'); setSelected(null);
     showToast(`${c?.name} archived`);
+  };
+
+  const clearAllClients = async () => {
+    if (user?.id && supabase) {
+      const result = await (clientSaveQueue.current = clientSaveQueue.current.catch(() => {}).then(() => deleteAllClients(user.id)));
+      const { error } = result;
+      if (error) { showToast(`Could not clear saved clients: ${error}`, 'error'); return; }
+    }
+    setClients([]);
+    showToast('Client data cleared');
   };
 
   const handleFormSave = (data) => {
@@ -189,13 +274,17 @@ export default function App() {
   }
 
   // ── Client-facing portal (no auth needed) ────────────────────────────────
-  if (portalAccessClient) {
+  const publicPortalClient = supabase ? portalClient : localPortalClient;
+  if (urlToken && (portalLoading || publicPortalClient || portalError)) {
+    if (portalLoading) return <div className="portal-outer"><div className="portal-phone">Loading secure portal…</div></div>;
+    if (!publicPortalClient) return <div className="portal-outer"><div className="portal-phone">{portalError || 'This portal link is invalid or has expired.'}</div></div>;
     return (
       <>
         <ClientPortal
-          client={portalAccessClient}
+          client={publicPortalClient}
           isClientView
-          onDocumentUploaded={handleDocumentUploaded}
+          onDocumentUploaded={updated => setPortalClient(updated)}
+          onReportPayment={client => setPortalClient(client)}
           showToast={showToast}
         />
         {toast && (
@@ -281,6 +370,7 @@ export default function App() {
               client={portalPreview || clients[0]}
               onBack={() => goTo('dashboard')}
               onDocumentUploaded={handleDocumentUploaded}
+              onReportPayment={updated => updateClient(updated.id, updated)}
               showToast={showToast}
             />
           )}
@@ -288,7 +378,7 @@ export default function App() {
           {screen === 'documents' && <DocumentsPage clients={clients} onSelectClient={handleSelectClient} />}
           {screen === 'deadlines' && <DeadlinesPage showToast={showToast} />}
           {screen === 'reminders' && <RemindersPage clients={clients} showToast={showToast} />}
-          {screen === 'settings'     && <SettingsPage  user={user} setUser={setUser} showToast={showToast} />}
+          {screen === 'settings'     && <SettingsPage  user={user} setUser={setUser} clients={clients} onClearClients={clearAllClients} showToast={showToast} />}
           {screen === 'computation'  && <TaxComputationPage clients={clients} showToast={showToast} />}
           {screen === 'balancesheet'   && <BalanceSheetPage    clients={clients} showToast={showToast} />}
           {screen === 'acknowledgments' && <AcknowledgmentPage clients={clients} onUpdateClient={updateClient} showToast={showToast} onSelectClient={handleSelectClient} />}
