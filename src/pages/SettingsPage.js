@@ -27,6 +27,7 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
   const [keys, setKeys] = useState({
     upiId:   savedSettings.upiId   || '',
     upiName: savedSettings.upiName || '',
+    razorpayRouteAccountId: savedSettings.razorpayRouteAccountId || savedProfile.razorpayRouteAccountId || '',
   });
 
   const [tab, setTab] = useState('profile');
@@ -48,8 +49,12 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
 
   const saveKeys = async () => {
     localStorage.setItem('ca_settings', JSON.stringify(keys));
-    const { error } = await supabaseUpdateProfile({ upi_id: keys.upiId || null, upi_name: keys.upiName || null });
-    showToast(error ? `UPI settings sync failed: ${error.message}` : 'UPI settings saved', error ? 'error' : 'success');
+    const { error } = await supabaseUpdateProfile({
+      upi_id: keys.upiId || null,
+      upi_name: keys.upiName || null,
+      razorpay_route_account_id: keys.razorpayRouteAccountId || null,
+    });
+    showToast(error ? `Payment settings sync failed: ${error.message}` : 'Payment settings saved', error ? 'error' : 'success');
   };
 
   const exportData = () => {
@@ -172,6 +177,27 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
                     </code>
                   </div>
                 )}
+              </div>
+
+              <div className="int-card" style={{ borderColor: keys.razorpayRouteAccountId ? 'var(--accent-border)' : undefined }}>
+                <div className="int-header">
+                  <div className="int-logo int-razorpay">₹</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="int-name">Razorpay · direct to your CA account</div>
+                    <div className="int-desc">
+                      Clients can pay by UPI, cards, netbanking and other methods in Razorpay Checkout. Their fee is routed to your linked Razorpay account.
+                    </div>
+                  </div>
+                  <span className={`pill ${keys.razorpayRouteAccountId ? 'pill-green' : 'pill-amber'}`}>
+                    {keys.razorpayRouteAccountId ? 'Account ID saved' : 'Setup required'}
+                  </span>
+                </div>
+                <div className="form-group" style={{ marginTop: 14 }}>
+                  <label className="form-label">Your Razorpay Route linked account ID</label>
+                  <input className="input" placeholder="acc_..."
+                    value={keys.razorpayRouteAccountId} onChange={e => setK('razorpayRouteAccountId', e.target.value.trim())} />
+                  <span className="form-hint">First enable Razorpay Route for CAPortal, add and complete KYC for your linked account, then copy its acc_ ID here. The ID is public; never enter an API secret.</span>
+                </div>
               </div>
 
               {/* WhatsApp sharing is user-initiated until a messaging provider is configured. */}

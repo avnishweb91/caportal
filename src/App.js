@@ -164,6 +164,14 @@ export default function App() {
         if (data) {
           const updated = { ...u, name: data.name || u.name, city: data.city, firm: data.firm_name };
           localStorage.setItem('ca_auth', JSON.stringify(updated));
+          let storedSettings = {};
+          try { storedSettings = JSON.parse(localStorage.getItem('ca_settings') || '{}'); } catch { /* discard malformed local settings */ }
+          localStorage.setItem('ca_settings', JSON.stringify({
+            ...storedSettings,
+            upiId: data.upi_id || '',
+            upiName: data.upi_name || '',
+            razorpayRouteAccountId: data.razorpay_route_account_id || '',
+          }));
           setUser(updated);
         }
       });

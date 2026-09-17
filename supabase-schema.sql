@@ -16,6 +16,7 @@ alter table if exists profiles
   add column if not exists membership_no text,
   add column if not exists upi_id text,
   add column if not exists upi_name text,
+  add column if not exists razorpay_route_account_id text,
   add column if not exists trial_start timestamptz default now(),
   add column if not exists plan_expiry timestamptz;
 
@@ -39,6 +40,7 @@ create table if not exists profiles (
   membership_no text,
   upi_id        text,
   upi_name      text,
+  razorpay_route_account_id text,
   -- Billing
   plan          text default 'trial',        -- trial | starter | pro | firm
   plan_expiry   timestamptz,
@@ -105,6 +107,7 @@ create table if not exists clients (
   fee_amount    integer default 0,
   fee_paid      boolean default false,
   fee_payment_status text default 'pending',
+  fee_payment_order_id text,
   docs_total    integer default 0,
   docs_received integer default 0,
   portal_token  text unique not null,
@@ -114,6 +117,7 @@ create table if not exists clients (
 );
 alter table clients
   add column if not exists fee_payment_status text default 'pending',
+  add column if not exists fee_payment_order_id text,
   add column if not exists data jsonb not null default '{}'::jsonb;
 update clients set portal_token = replace(gen_random_uuid()::text, '-', '') where portal_token is null or portal_token = '';
 alter table clients alter column portal_token set not null;

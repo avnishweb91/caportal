@@ -22,6 +22,7 @@ export const clientFromRow = (row) => {
     feeAmount: row.fee_amount || 0,
     feePaid: !!row.fee_paid,
     feePaymentStatus: row.fee_payment_status || (row.fee_paid ? 'paid' : 'pending'),
+    feePaymentOrderId: row.fee_payment_order_id || '',
     docsReceived: row.docs_received || 0,
     docsTotal: row.docs_total || 0,
     documents: data.documents || [],
@@ -42,6 +43,7 @@ export const clientToRow = (client, caId) => ({
   fee_amount: Number(client.feeAmount) || 0,
   fee_paid: !!client.feePaid,
   fee_payment_status: client.feePaid ? 'paid' : (client.feePaymentStatus || 'pending'),
+  fee_payment_order_id: client.feePaymentOrderId || null,
   docs_total: client.docsTotal ?? client.documents?.length ?? 0,
   docs_received: client.docsReceived ?? client.documents?.filter(d => d.uploaded).length ?? 0,
   portal_token: client.portalToken,
@@ -56,10 +58,28 @@ export const loadClients = async (caId) => {
 
 export const saveClients = async (caId, clients) => {
   if (!supabase) return { data: null, error: 'Supabase not configured' };
+  if (!clients.length) return { data: [], error: null };
+  const { data: existingRows, error: readError } = await supabase.from('clients')
+    .select('portal_token,fee_payment_order_id,fee_paid,data').eq('ca_id', caId)
+    .in('portal_token', clients.map(client => client.portalToken));
+  if (readError) return { data: null, error: readError.message };
+  const existingByToken = new Map((existingRows || []).map(row => [row.portal_token, row]));
   const saved = [];
   for (const client of clients) {
+    const row = clientToRow(client, caId);
+    const existing = existingByToken.get(client.portalToken);
+    if (existing) {
+      // A stale CA browser must not erase the active checkout order or a fee
+      // payment that Razorpay has already verified server-side.
+      row.fee_payment_order_id = existing.fee_payment_order_id || row.fee_payment_order_id;
+      if (existing.data?.feePaymentId) {
+        row.fee_paid = true;
+        row.fee_payment_status = 'paid';
+        row.data = { ...row.data, feePaid: true, feePaymentStatus: 'paid', feePaymentId: existing.data.feePaymentId };
+      }
+    }
     const { data, error } = await supabase.from('clients')
-      .upsert(clientToRow(client, caId), { onConflict: 'portal_token' })
+      .upsert(row, { onConflict: 'portal_token' })
       .select('*').single();
     if (error) return { data: null, error: error.message };
     saved.push(clientFromRow(data));
@@ -88,6 +108,20 @@ export const loadPortalClient = async (token) => {
 export const reportPortalPayment = async (token) => {
   if (!supabase) return { error: 'Portal service unavailable' };
   const { data, error } = await supabase.functions.invoke('client-portal', { body: { action: 'report_payment', token } });
+  return { data, error: error?.message || data?.error || null };
+};
+
+export const createPortalFeeOrder = async (token) => {
+  if (!supabase) return { data: null, error: 'Portal payment service unavailable' };
+  const { data, error } = await supabase.functions.invoke('client-portal', { body: { action: 'create_fee_order', token } });
+  return { data, error: error?.message || data?.error || null };
+};
+
+export const verifyPortalFeePayment = async (token, payment) => {
+  if (!supabase) return { data: null, error: 'Portal payment service unavailable' };
+  const { data, error } = await supabase.functions.invoke('client-portal', {
+    body: { action: 'verify_fee_payment', token, ...payment },
+  });
   return { data, error: error?.message || data?.error || null };
 };
 
@@ -161,7 +195,7 @@ export const syncProfileFromSupabase = async () => {
     if (!user) return null;
     const { data } = await supabase
       .from('profiles')
-      .select('name, firm_name, city, phone, membership_no')
+      .select('name, firm_name, city, phone, membership_no, upi_id, upi_name, razorpay_route_account_id')
       .eq('id', user.id)
       .single();
     return data || null;

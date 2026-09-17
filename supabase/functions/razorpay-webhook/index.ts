@@ -53,17 +53,61 @@ serve(async (req: Request) => {
   try { order = await getRazorpayOrder(payment.order_id) }
   catch (error) { console.error(error); return new Response('Could not verify payment order', { status: 502 }) }
   const notes = order.notes ?? {}
-  const plan = notes.planId
   if (order.amount !== amount || order.currency !== 'INR' || order.status !== 'paid') {
     return new Response('Razorpay order does not match captured payment', { status: 400 })
   }
-  if (!amountPlan || plan !== amountPlan) return new Response('Payment amount does not match plan', { status: 400 })
-
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     { auth: { persistSession: false } },
   )
+  if (notes.purpose === 'client_fee') {
+    const clientId = Number(notes.clientId)
+    const caId = typeof notes.caId === 'string' ? notes.caId : ''
+    const { data: client, error: clientError } = await supabase.from('clients')
+      .select('id,ca_id,fee_amount,fee_paid,fee_payment_order_id,data').eq('id', clientId).maybeSingle()
+    if (clientError) return new Response('Could not load client fee', { status: 500 })
+    if (!client || client.ca_id !== caId || Math.round(Number(client.fee_amount) * 100) !== amount) {
+      return new Response('Payment does not match this CA client fee', { status: 400 })
+    }
+    if (client.fee_payment_order_id !== payment.order_id) return new Response('Payment order is not the active client fee checkout', { status: 400 })
+    const { data: profile, error: profileLookupError } = await supabase.from('profiles')
+      .select('razorpay_route_account_id').eq('id', caId).maybeSingle()
+    if (profileLookupError) return new Response('Could not verify CA payment account', { status: 500 })
+    const transferMatches = (order.transfers || []).some((transfer: any) =>
+      transfer.account === profile?.razorpay_route_account_id && transfer.amount === amount && transfer.currency === 'INR')
+    if (!transferMatches) return new Response('Payment is not routed to the CA account', { status: 400 })
+    if (client.fee_paid) {
+      if (client.data?.feePaymentId !== payment.id) return new Response('Client fee was already paid by another payment', { status: 409 })
+      return new Response(JSON.stringify({ success: true, duplicate: true }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const data = client.data || {}
+    const updatedData = {
+      ...data, feePaid: true, feePaymentStatus: 'paid', feePaymentId: payment.id,
+      timeline: [
+        { action: `Professional fee paid via Razorpay (₹${client.fee_amount})`, time: new Date().toISOString(), type: 'green' },
+        ...(data.timeline || []),
+      ],
+    }
+    const { data: updated, error: updateError } = await supabase.from('clients').update({
+      fee_paid: true, fee_payment_status: 'paid', data: updatedData,
+    }).eq('id', client.id).eq('fee_paid', false).eq('fee_payment_order_id', payment.order_id)
+      .select('id').maybeSingle()
+    if (updateError) return new Response('Could not record client fee payment', { status: 500 })
+    if (!updated) {
+      const { data: latest } = await supabase.from('clients').select('data').eq('id', client.id).maybeSingle()
+      if (latest?.data?.feePaymentId !== payment.id) return new Response('Client fee was paid concurrently by another payment', { status: 409 })
+    }
+    return new Response(JSON.stringify({ success: true, paymentType: 'client_fee' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const plan = notes.planId
+  if (!amountPlan || plan !== amountPlan) return new Response('Payment amount does not match plan', { status: 400 })
   const caUserId = notes.caUserId
   let caId = typeof caUserId === 'string' ? caUserId : ''
   let caEmail = typeof notes.caEmail === 'string' ? notes.caEmail.toLowerCase() : ''

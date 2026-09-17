@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { uploadPortalDocument, reportPortalPayment } from '../lib/supabase';
+import { payClientFee } from '../lib/clientPayments';
 import './ClientPortal.css';
 
 const getCASettings = () => {
@@ -30,6 +31,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
   const [uploadingDocument, setUploadingDocument] = useState('');
   const [msg, setMsg] = useState('');
   const [reportingPayment, setReportingPayment] = useState(false);
+  const [payingFee, setPayingFee] = useState(false);
   const paid = !!client?.feePaid;
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [msgs, setMsgs] = useState([
@@ -111,7 +113,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
     </label>
   );
 
-  const handlePayFee = () => {
+  const handlePayManualUpi = () => {
     if (!upiId) { showPortalToast('Payment not set up yet — contact your CA'); return; }
     const desc    = `${client.type} FY 2025-26 Fee`;
     const upiLink = makeUpiLink(upiId, upiName, client.feeAmount, desc);
@@ -119,6 +121,19 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
       window.location.href = upiLink;
     }
     // desktop shows QR + copy — handled in JSX below
+  };
+
+  const handlePayFee = async () => {
+    if (!client.razorpayConfigured) { handlePayManualUpi(); return; }
+    setPayingFee(true);
+    await payClientFee(client, (updatedClient) => {
+      setPayingFee(false);
+      onReportPayment?.(updatedClient);
+      showPortalToast('Payment verified and sent to your CA.');
+    }, (message) => {
+      setPayingFee(false);
+      if (message) showPortalToast(message);
+    });
   };
 
   const tabs = [
@@ -163,16 +178,18 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             </div>
 
             {/* Fee payment card */}
-            {!paid && client.feePaymentStatus !== 'reported' && client.feeAmount > 0 && upiId && (
+            {!paid && client.feePaymentStatus !== 'reported' && client.feeAmount > 0 && (upiId || client.razorpayConfigured) && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
                   <div className="pfc-label">Professional fee · {upiName}</div>
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                   <div className="pfc-sub">{client.type} · FY 2025–26</div>
                 </div>
-                {isMobile()
-                  ? <button className="pfc-btn" onClick={handlePayFee}>Pay via UPI →</button>
-                  : <button className="pfc-btn" onClick={() => setShowUpiModal(true)}>Pay ₹{client.feeAmount.toLocaleString()} →</button>
+                {client.razorpayConfigured
+                  ? <button className="pfc-btn" disabled={payingFee} onClick={handlePayFee}>{payingFee ? 'Opening Razorpay…' : `Pay ₹${client.feeAmount.toLocaleString()} with Razorpay →`}</button>
+                  : isMobile()
+                    ? <button className="pfc-btn" onClick={handlePayFee}>Pay via UPI →</button>
+                    : <button className="pfc-btn" onClick={() => setShowUpiModal(true)}>Pay ₹{client.feeAmount.toLocaleString()} →</button>
                 }
               </div>
             )}
@@ -196,7 +213,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             )}
 
             {/* UPI modal for desktop */}
-            {showUpiModal && (
+            {showUpiModal && !client.razorpayConfigured && (
               <div className="upi-modal-overlay" onClick={() => setShowUpiModal(false)}>
                 <div className="upi-modal" onClick={e => e.stopPropagation()}>
                   <div className="upi-modal-title">Pay ₹{client.feeAmount.toLocaleString()} to {upiName}</div>
@@ -225,12 +242,12 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                 </div>
               </div>
             )}
-            {!paid && client.feeAmount > 0 && upiId && client.feePaymentStatus !== 'reported' && (
+            {!paid && !client.razorpayConfigured && client.feeAmount > 0 && upiId && client.feePaymentStatus !== 'reported' && (
               <button className="upi-paid-btn" style={{width:'100%', marginTop:8}} disabled={reportingPayment} onClick={handleReportPayment}>
                 {reportingPayment ? 'Sending…' : 'I have paid · notify my CA'}
               </button>
             )}
-            {!paid && client.feeAmount > 0 && !upiId && (
+            {!paid && client.feeAmount > 0 && !upiId && !client.razorpayConfigured && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
                   <div className="pfc-label">Professional fee · {upiName}</div>
