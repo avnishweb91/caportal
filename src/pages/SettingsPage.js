@@ -174,17 +174,17 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
                 )}
               </div>
 
-              {/* WhatsApp — platform handled */}
+              {/* WhatsApp sharing is user-initiated until a messaging provider is configured. */}
               <div className="int-card">
                 <div className="int-header">
                   <div className="int-logo int-whatsapp">💬</div>
                   <div style={{ flex: 1 }}>
                     <div className="int-name">WhatsApp Reminders</div>
                     <div className="int-desc">
-                      Auto-send document reminders to your clients via WhatsApp. Handled by CAPortal — no setup needed.
+                      Prepare a WhatsApp message with the client’s missing documents and secure portal link. Review it and press Send in WhatsApp. Automated Twilio delivery is not connected yet; it needs a Twilio WhatsApp sender, an approved template, and server-side credentials.
                     </div>
                   </div>
-                  <span className="pill pill-green">✓ Included</span>
+                  <span className="pill pill-blue">Manual send</span>
                 </div>
               </div>
 
@@ -194,17 +194,15 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
                   <div className="int-logo int-email">✉</div>
                   <div style={{ flex: 1 }}>
                     <div className="int-name">Email Notifications</div>
-                    <div className="int-desc">
-                      Clients get emails when their ITR is filed or documents are needed. Sent from noreply@caportal.co — no setup needed.
-                    </div>
+                    <div className="int-desc">Email delivery is not configured yet.</div>
                   </div>
-                  <span className="pill pill-green">✓ Included</span>
+                  <span className="pill pill-amber">Not configured</span>
                 </div>
               </div>
 
               <button className="btn btn-primary" onClick={saveKeys}>Save settings</button>
               <div className="settings-note">
-                Only your UPI ID is needed. WhatsApp reminders and email notifications are handled by CAPortal and included in your plan.
+                WhatsApp drafts open with the client’s mobile number and portal link. Nothing is marked sent until you send it in WhatsApp. Automated Twilio delivery needs a separate integration, account credentials, sender approval, an approved message template, and client opt-in.
               </div>
             </div>
           )}

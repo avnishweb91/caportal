@@ -30,7 +30,7 @@ CAPortal replaces the WhatsApp + Excel workflow every Indian CA uses to manage c
 | Invoices | `src/pages/InvoicesPage.js` | All fees — mark paid, collect via UPI |
 | Documents | `src/pages/DocumentsPage.js` | All documents across all clients |
 | Deadlines | `src/pages/DeadlinesPage.js` | ITR, GST, TDS deadlines with urgency badges |
-| Reminders | `src/pages/RemindersPage.js` | WhatsApp reminder log + compose |
+| Reminders | `src/pages/RemindersPage.js` | Per-client WhatsApp drafts with missing docs and portal links |
 | Tax Computation | `src/pages/TaxComputationPage.js` | FY 2025-26 — both regimes, all income heads, CG Budget 2024 rates, advance tax, PDF |
 | Balance Sheet Builder | `src/pages/BalanceSheetPage.js` | Trading A/c → P&L → Balance Sheet, auto-tally, Indian-format PDF |
 | Acknowledgment Tracker | `src/pages/AcknowledgmentPage.js` | Store and search ITR ack nos., GST ARNs, TDS ref nos. per client |
@@ -42,7 +42,7 @@ CAPortal replaces the WhatsApp + Excel workflow every Indian CA uses to manage c
 
 | Screen | File | Description |
 |---|---|---|
-| Client Portal | `src/pages/ClientPortal.js` | Mobile-first portal — docs, status, messaging, UPI payment |
+| Client Portal | `src/pages/ClientPortal.js` | Mobile-first portal — per-document uploads, live status, UPI fee payment |
 
 Accessible via unique link: `caportal.co/?portal=TOKEN`
 
@@ -50,8 +50,8 @@ Accessible via unique link: `caportal.co/?portal=TOKEN`
 
 ## Key Features
 
-**Client portal magic link**
-Every client gets a unique URL. CA copies it from Client Detail and sends via WhatsApp. Client opens it on phone — no app, no login. Uploads documents, pays fees, messages CA.
+**Client portal link**
+Every client gets a unique URL. CA copies it or opens a WhatsApp draft that includes the link and missing document names. Client opens it on phone — no app or login — and uploads each checklist document, sees filing status, and pays the CA's UPI ID. WhatsApp drafts are sent manually by the CA. Automated Twilio delivery requires a configured WhatsApp Business sender and approved message template.
 
 **7-step filing workflow**
 Each client moves through a granular pipeline instead of coarse 4-step status:
@@ -92,12 +92,12 @@ Client Detail → "Download invoice" → professional invoice opens in new tab �
 | Frontend | React 19 | No Router — single `screen` state in App.js |
 | Styling | CSS custom properties | Dark theme, Geist + IBM Plex Mono |
 | Database + Auth | Supabase (PostgreSQL) | Row Level Security on all tables |
-| File storage | Supabase Storage | Ready to connect |
+| File storage | Supabase Storage | Private client documents |
 | CA subscription payments | Razorpay | Developer's account — CA pays ₹799/₹1,799/₹3,499 |
 | Client fee payments | UPI direct | CA's UPI ID — zero commission, instant to CA's bank |
 | Webhook | Supabase Edge Functions | `supabase/functions/razorpay-webhook/index.ts` |
-| Email | Resend | Platform-handled, noreply@caportal.co |
-| WhatsApp | Gupshup | Platform-handled, key pending |
+| Email | Not configured | No outbound email delivery yet |
+| WhatsApp | wa.me drafts | CA reviews and sends from WhatsApp; no Twilio credentials configured |
 | Hosting | Vercel | Auto-deploys on push to `develop` |
 
 ---
@@ -177,11 +177,8 @@ REACT_APP_RAZORPAY_KEY=rzp_live_XXXXXXXXXX
 REACT_APP_SUPABASE_URL=https://your-ref.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJ...
 
-# Email (Resend) — platform-handled
-REACT_APP_RESEND_KEY=re_XXXXXXXXXX
-
-# WhatsApp (Gupshup) — platform-handled
-REACT_APP_GUPSHUP_KEY=XXXXXXXXXX
+# Outbound WhatsApp: reminders open a prefilled wa.me draft in the CA's WhatsApp.
+# Automated Twilio sending is not configured yet. Never expose Twilio secrets as REACT_APP_*.
 ```
 
 Also set in **Vercel → Settings → Environment Variables** for production.
@@ -267,7 +264,7 @@ All tokens in `src/index.css`:
 
 ## Roadmap
 
-- [ ] Gupshup WhatsApp key → auto-reminders go live
+- [ ] Twilio WhatsApp sender + approved template → automated reminders
 - [ ] Supabase real-time → CA sees document uploads instantly
 - [ ] Draft return approval — CA uploads PDF, client approves with one tap
 - [ ] Multilingual client portal — Hindi, Tamil, Telugu, Kannada

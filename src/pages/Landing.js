@@ -3,7 +3,7 @@ import './Landing.css';
 
 const features = [
   { tag:'Core',        tagClass:'feat-tag-blue',   title:'Document collection portal',   desc:'Each client gets a private link. They upload Form 16, bank statements, PAN, Aadhaar — you see everything in one organised folder. No more digging through WhatsApp.' },
-  { tag:'Automation',  tagClass:'feat-tag-green',  title:'Auto WhatsApp reminders',       desc:'Set a checklist per client. The tool auto-sends reminders until documents arrive. You stop typing "please share your Form 16" forever.' },
+  { tag:'Reminders',  tagClass:'feat-tag-green',  title:'WhatsApp document reminders',       desc:'Prepare a message for each client with their missing documents and secure portal link. Review it and send it from WhatsApp.' },
   { tag:'Deadlines',   tagClass:'feat-tag-amber',  title:'ITR & GST deadline calendar',   desc:'Pre-loaded with every Indian tax deadline — ITR, GST, TDS, Advance Tax. Alerts fire 7 days before. Clients get notified too.' },
   { tag:'Workflow',    tagClass:'feat-tag-blue',   title:'7-step filing pipeline',        desc:'Waiting docs → Docs received → Computation done → Return prepared → Client approved → Filed → Ack received. One-click advance. Every client exactly where they are.' },
   { tag:'Billing',     tagClass:'feat-tag-purple', title:'Fee invoices + UPI payments',   desc:"Send professional invoices inside the portal. Clients pay via UPI or card. You track who has paid, who hasn't, and how much is outstanding." },
@@ -53,7 +53,7 @@ const MODALS = {
         <h3>What we built</h3>
         <ul>
           <li>Private document portal for each client — they upload, you receive</li>
-          <li>Auto WhatsApp reminders so you stop chasing documents manually</li>
+          <li>One-tap WhatsApp reminder drafts with each client’s missing documents and portal link</li>
           <li>ITR, GST, TDS deadline calendar pre-loaded for the Indian tax calendar</li>
           <li>Filing status clients can check themselves — zero calls</li>
           <li>Fee invoicing with UPI + card payments built in</li>
@@ -225,7 +225,7 @@ const MODALS = {
 
         {[
           ['How does the client portal link work?', 'When you add a client in CAPortal, a unique private link is generated. Copy it from the client detail page and send it via WhatsApp. Your client opens the link on their phone — no app download, no login needed — and they can upload documents and check their filing status.'],
-          ['Can clients pay their fee through the portal?', 'Yes. If you have a Razorpay account, add your API key in Settings → Integrations. A "Pay now" button will appear in the client portal showing the fee amount. Clients can pay via UPI, debit/credit card, or netbanking.'],
+          ['Can clients pay their fee through the portal?', 'Yes. Add your UPI ID and display name in Settings → Integrations. The portal shows your CA name and fee, then lets the client pay from their UPI app or scan a QR code. The client can report payment; you confirm it in CAPortal.'],
           ['Is my clients\' data secure?', 'All data is encrypted in transit and at rest. Each CA account is fully isolated — you can only see your own clients\' data. We use Supabase with Row Level Security on all tables.'],
           ['How do I migrate from my current Excel/WhatsApp workflow?', 'Start by adding your top 5 clients in CAPortal. Send them their portal links. Once you see how document collection works, add the rest. Most CAs migrate fully within one week.'],
           ['What happens to my data if I cancel?', 'Your data remains accessible for 30 days after cancellation. You can export a full backup (Settings → Data → Export) at any time. After 30 days, data is permanently deleted.'],
@@ -258,8 +258,8 @@ const MODALS = {
             ['Database', 'Supabase PostgreSQL', 'operational'],
             ['File Storage', 'Supabase Storage', 'operational'],
             ['Payments', 'Razorpay Checkout', 'operational'],
-            ['Email', 'Resend', 'operational'],
-            ['WhatsApp', 'Gupshup API', 'operational'],
+            ['Email', 'Not configured', 'degraded'],
+            ['WhatsApp reminders', 'Prefilled WhatsApp drafts', 'operational'],
           ].map(([name, provider, status]) => (
             <div key={name} className="lm-service-row">
               <div>

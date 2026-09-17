@@ -264,7 +264,7 @@ export default function AuthPage({ onLogin, defaultTab = 'signin', onBack }) {
           ))}
         </div>
         <div className="auth-features">
-          {['Document collection portal','Auto WhatsApp reminders','ITR & GST deadline calendar','Fee invoicing + UPI payments'].map(f => (
+          {['Document collection portal','WhatsApp reminder drafts','ITR & GST deadline calendar','Fee invoicing + UPI payments'].map(f => (
             <div key={f} className="auth-feature-item">
               <span className="auth-feature-check">✓</span> {f}
             </div>

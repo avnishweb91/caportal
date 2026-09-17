@@ -12,18 +12,22 @@ const makeUpiLink = (upiId, name, amount, desc) =>
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-const steps = [
-  { label:'Portal link sent',       time:'May 27', done:true,  active:false },
-  { label:'Documents received',     time:'Jun 1',  done:true,  active:false },
-  { label:'CA review in progress',  time:'Jun 2',  done:false, active:true  },
-  { label:'Draft return shared',    time:'Pending',done:false, active:false },
-  { label:'ITR filed',              time:'Pending',done:false, active:false },
+const STATUS_STEPS = [
+  { value: 'waiting_docs', label: 'Waiting for documents' },
+  { value: 'docs_received', label: 'Documents received' },
+  { value: 'computation_done', label: 'Computation complete' },
+  { value: 'return_prepared', label: 'Return prepared' },
+  { value: 'client_approved', label: 'Awaiting client approval' },
+  { value: 'filed', label: 'Return filed' },
+  { value: 'ack_received', label: 'Acknowledgment received' },
 ];
+const LEGACY_STATUS = { docs_pending: 'waiting_docs', under_review: 'docs_received' };
 
 export default function ClientPortal({ client, onBack, showToast, isClientView = false, onDocumentUploaded, onReportPayment }) {
   const [tab, setTab] = useState('home');
   const [toast, setToast]       = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState('');
   const [msg, setMsg] = useState('');
   const [reportingPayment, setReportingPayment] = useState(false);
   const paid = !!client?.feePaid;
@@ -43,6 +47,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
 
     const docName = targetDocName || client.documents.find(d => !d.uploaded)?.name || file.name;
     setUploading(true);
+    setUploadingDocument(docName);
     showPortalToast('Uploading…');
 
     let fileUrl = null;
@@ -52,6 +57,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
       if (result.error !== 'Supabase not configured') {
         showPortalToast(`Upload failed: ${result.error}`);
         setUploading(false);
+        setUploadingDocument('');
         e.target.value = '';
         return;
       }
@@ -64,6 +70,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
     else if (onDocumentUploaded) onDocumentUploaded(client.id, docName, fileInfo);
     showPortalToast(`✓ ${file.name} uploaded`);
     setUploading(false);
+    setUploadingDocument('');
     e.target.value = '';
   };
 
@@ -87,6 +94,22 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
   const caSettings = getCASettings();
   const upiId   = client.upiId || caSettings.upiId || '';
   const upiName = client.upiName || caSettings.upiName || 'Your CA';
+  const normalizedStatus = LEGACY_STATUS[client.status] || client.status || 'waiting_docs';
+  const currentStage = STATUS_STEPS.findIndex(step => step.value === normalizedStatus);
+  const statusLabel = STATUS_STEPS[currentStage]?.label || String(normalizedStatus).replace(/_/g, ' ');
+  const statusSteps = STATUS_STEPS.map((step, index) => ({
+    ...step,
+    done: currentStage >= 0 && index < currentStage,
+    active: index === currentStage,
+  }));
+  const uploadControl = (doc) => !doc.uploaded && (
+    <label className="portal-doc-upload" title={`Upload ${doc.name}`}>
+      <input type="file" accept=".pdf,.jpg,.jpeg,.png" disabled={uploading}
+        aria-label={`Upload ${doc.name}`}
+        onChange={e => handleFileChange(e, doc.name)} />
+      <span>{uploadingDocument === doc.name ? 'Uploading…' : 'Upload'}</span>
+    </label>
+  );
 
   const handlePayFee = () => {
     if (!upiId) { showPortalToast('Payment not set up yet — contact your CA'); return; }
@@ -118,8 +141,8 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
           <div className="portal-status-card">
             <div className="psc-icon">📄</div>
             <div>
-              <div className="psc-label">ITR 2025–26</div>
-              <div className="psc-val">CA is reviewing your documents</div>
+              <div className="psc-label">{client.type || 'ITR'} · FY 2025–26</div>
+              <div className="psc-val">{statusLabel}</div>
             </div>
             <div className="psc-pill">Active</div>
           </div>
@@ -134,6 +157,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                   <div className={`ci-check ${doc.uploaded?'ci-done':'ci-miss'}`}>{doc.uploaded?'✓':''}</div>
                   <div className="ci-name">{doc.name}</div>
                   <span className={`ci-badge ${doc.uploaded?'ci-ok':'ci-no'}`}>{doc.uploaded?'Done':'Needed'}</span>
+                  {uploadControl(doc)}
                 </div>
               ))}
             </div>
@@ -142,7 +166,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             {!paid && client.feePaymentStatus !== 'reported' && client.feeAmount > 0 && upiId && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
-                  <div className="pfc-label">Professional fee</div>
+                  <div className="pfc-label">Professional fee · {upiName}</div>
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                   <div className="pfc-sub">{client.type} · FY 2025–26</div>
                 </div>
@@ -155,7 +179,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             {!paid && client.feePaymentStatus === 'reported' && (
               <div className="portal-fee-card">
                 <div className="pfc-left">
-                  <div className="pfc-label">Professional fee</div>
+                  <div className="pfc-label">Professional fee · {upiName}</div>
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                 </div>
                 <span style={{fontSize:12,color:'var(--amber)',fontWeight:600}}>Payment reported · awaiting CA confirmation</span>
@@ -164,7 +188,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             {paid && (
               <div className="portal-fee-card portal-fee-paid">
                 <div className="pfc-left">
-                  <div className="pfc-label">Professional fee</div>
+                  <div className="pfc-label">Professional fee · {upiName}</div>
                   <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
                 </div>
                 <span style={{fontSize:12,color:'var(--green)',fontWeight:600}}>✓ Paid</span>
@@ -175,7 +199,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             {showUpiModal && (
               <div className="upi-modal-overlay" onClick={() => setShowUpiModal(false)}>
                 <div className="upi-modal" onClick={e => e.stopPropagation()}>
-                  <div className="upi-modal-title">Pay ₹{client.feeAmount.toLocaleString()}</div>
+                  <div className="upi-modal-title">Pay ₹{client.feeAmount.toLocaleString()} to {upiName}</div>
                   <div className="upi-modal-sub">Scan with GPay, PhonePe, Paytm or any UPI app</div>
                   <img
                     className="upi-qr"
@@ -206,6 +230,15 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
                 {reportingPayment ? 'Sending…' : 'I have paid · notify my CA'}
               </button>
             )}
+            {!paid && client.feeAmount > 0 && !upiId && (
+              <div className="portal-fee-card">
+                <div className="pfc-left">
+                  <div className="pfc-label">Professional fee · {upiName}</div>
+                  <div className="pfc-amount">₹{client.feeAmount.toLocaleString()}</div>
+                  <div className="pfc-sub">Contact your CA for payment details.</div>
+                </div>
+              </div>
+            )}
 
             {toast && <div className="upload-toast">{toast}</div>}
             <div className="ps-title" style={{marginTop:14}}>Upload document</div>
@@ -220,17 +253,17 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
 
           {tab==='status' && <>
             <div className="ps-title" style={{marginBottom:12}}>Filing progress</div>
-            {steps.map((step,i)=>(
+            {statusSteps.map((step,i)=>(
               <div className="status-step" key={i}>
                 <div className="step-indicator">
                   <div className={`step-circle ${step.done?'step-done-c':step.active?'step-active-c':'step-pend-c'}`}>
                     {step.done?'✓':step.active?'…':''}
                   </div>
-                  {i<steps.length-1&&<div className="step-connector"/>}
+                  {i<statusSteps.length-1&&<div className="step-connector"/>}
                 </div>
                 <div style={{paddingBottom:step.active?0:8}}>
                   <div className={`step-label ${!step.done&&!step.active?'step-label-inactive':''}`}>{step.label}</div>
-                  <div className="step-time">{step.time}</div>
+                  <div className="step-time">{step.active ? 'Current step' : step.done ? 'Complete' : 'Pending'}</div>
                 </div>
               </div>
             ))}
@@ -239,11 +272,11 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
           {tab==='docs' && <>
             <div className="ps-title">Uploaded documents</div>
             <div className="card" style={{padding:'8px 12px',marginBottom:14}}>
-              {client.documents.filter(d=>d.uploaded).map((doc,i)=>(
+              {client.documents.map((doc,i)=>(
                 <div className="portal-doc-row" key={i}>
-                  <span className="pdr-icon">📄</span>
+                  <span className="pdr-icon">{doc.uploaded ? '📄' : '!'}</span>
                   <span className="pdr-name">{doc.name}</span>
-                  <span className="pdr-date">{doc.date}</span>
+                  {doc.uploaded ? <span className="pdr-date">{doc.date || 'Uploaded'}</span> : uploadControl(doc)}
                 </div>
               ))}
             </div>
@@ -295,7 +328,7 @@ export default function ClientPortal({ client, onBack, showToast, isClientView =
             ['Plan', client.plan],
             ['Filing type', client.type],
             ['Docs uploaded', `${client.docsReceived} / ${client.docsTotal}`],
-            ['Fee status', client.feePaid ? `Paid — ₹${client.feeAmount.toLocaleString()}` : `Pending — ₹${client.feeAmount.toLocaleString()}`],
+            ['Fee status', client.feePaid ? `Paid — ₹${client.feeAmount.toLocaleString()}` : client.feePaymentStatus === 'reported' ? `Reported — ₹${client.feeAmount.toLocaleString()}` : `Pending — ₹${client.feeAmount.toLocaleString()}`],
           ].map(([l,v])=>(
             <div className="pib-item" key={l}><span className="pib-label">{l}</span><span className="pib-val">{v}</span></div>
           ))}

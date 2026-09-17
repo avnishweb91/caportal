@@ -351,11 +351,13 @@ export default function App() {
               showToast={showToast}
               billing={billing}
               onUpgrade={() => { setScreen('settings'); setSidebarTab('settings'); }}
+              user={user}
             />
           )}
           {screen === 'detail' && liveClient && (
             <ClientDetail
               client={liveClient}
+              user={user}
               onBack={() => { setScreen('dashboard'); setSidebarTab('dashboard'); setSelected(null); }}
               onUpdateClient={updateClient}
               onArchive={archiveClient}

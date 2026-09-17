@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { deadlines } from '../data/mockData';
+import { getWhatsAppUrl, buildClientReminderMessage } from '../lib/utils';
 import './Dashboard.css';
 
 const statusMap = {
@@ -33,11 +34,27 @@ const statusFilters = [
   { val: 'ack_received',    label: 'Ack received' },
 ];
 
-export default function Dashboard({ clients, onSelectClient, onAddClient, showToast, billing, onUpgrade }) {
+export default function Dashboard({ clients, onSelectClient, onAddClient, showToast, billing, onUpgrade, user }) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilter, setShowFilter] = useState(false);
+  const [bulkDrafts, setBulkDrafts] = useState([]);
+
+  const openWhatsAppDraft = (client) => {
+    const url = getWhatsAppUrl(client.phone, buildClientReminderMessage(client, { caName: user?.name || '' }));
+    if (!url) {
+      showToast(client.phone ? `Invalid mobile number for ${client.name}` : `Add a mobile number for ${client.name} first`, 'error');
+      return;
+    }
+    const popup = window.open(url, '_blank');
+    if (!popup) {
+      showToast('WhatsApp was blocked by the browser. Allow pop-ups and try again.', 'error');
+      return;
+    }
+    popup.opener = null;
+    showToast(`WhatsApp draft opened for ${client.name}. Press Send in WhatsApp.`);
+  };
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
@@ -79,9 +96,10 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
   };
 
   const sendBulkReminder = () => {
-    const n = selected.length;
-    showToast(`WhatsApp reminder sent to ${n} client${n > 1 ? 's' : ''}`);
-    setSelected([]);
+    const targets = clients.filter(client => selected.includes(client.id));
+    if (!targets.length) return;
+    setBulkDrafts(targets);
+    showToast(`Prepared ${targets.length} WhatsApp draft${targets.length === 1 ? '' : 's'}. Open each one and press Send.`);
   };
 
   if (clients.length === 0) {
@@ -162,7 +180,7 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
         {[
           { label: 'Total clients',  val: String(clients.length), sub: `${clients.filter(c=>c.plan==='Pro'||c.plan==='Firm').length} on paid plans`, trend: String(clients.length), tc: 'trend-up' },
           { label: 'ITR filed',      val: String(filed), sub: `${Math.round(filed / clients.length * 100)}% of season`, trend: `${Math.round(filed / clients.length * 100)}%`, tc: 'trend-up' },
-          { label: 'Docs missing',   val: String(missing), sub: 'Auto-reminders active', trend: String(missing), tc: 'trend-warn' },
+          { label: 'Docs missing',   val: String(missing), sub: 'WhatsApp drafts ready', trend: String(missing), tc: 'trend-warn' },
           { label: 'Fees pending',   val: `₹${(unpaidAmt / 1000).toFixed(1)}k`, sub: `${clients.filter(c => !c.feePaid).length} invoices unpaid`, trend: '!', tc: 'trend-down' },
         ].map(m => (
           <div className="metric-tile" key={m.label}>
@@ -216,6 +234,21 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
           </div>
 
           <div className="client-table">
+            {bulkDrafts.length > 0 && (
+              <div className="card" style={{ padding: 14, marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <strong style={{ fontSize: 12 }}>WhatsApp drafts</strong>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setBulkDrafts([])}>Close</button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {bulkDrafts.map(client => (
+                    <button key={client.id} className="btn btn-ghost btn-sm" onClick={() => openWhatsAppDraft(client)}>
+                      Open {client.name} draft
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="table-head">
               <div className="th">
                 <input type="checkbox" className="tr-checkbox"
@@ -252,7 +285,7 @@ export default function Dashboard({ clients, onSelectClient, onAddClient, showTo
                   <div className="td"><span className={`pill ${s.cls}`}>{s.label}</span></div>
                   <div className="td-actions">
                     <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); onSelectClient(client); }}>View</button>
-                    <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); showToast(`WhatsApp sent to ${client.name}`); }}>💬</button>
+                    <button className="btn btn-ghost btn-sm" aria-label={`WhatsApp ${client.name}`} onClick={e => { e.stopPropagation(); openWhatsAppDraft(client); }}>💬</button>
                   </div>
                 </div>
               );

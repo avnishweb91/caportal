@@ -9,6 +9,30 @@ export const getPortalUrl = (token) => {
   return `${base}?portal=${token}`;
 };
 
+export const normalizeWhatsAppNumber = (phone) => {
+  let digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length === 10) digits = `91${digits}`;
+  else if (digits.length === 11 && digits.startsWith('0')) digits = `91${digits.slice(1)}`;
+  return digits.length >= 8 && digits.length <= 15 ? digits : null;
+};
+
+export const getWhatsAppUrl = (phone, message = '') => {
+  const number = normalizeWhatsAppNumber(phone);
+  return number ? `https://wa.me/${number}?text=${encodeURIComponent(message)}` : null;
+};
+
+export const buildClientReminderMessage = (client, { caName = '', documentName = '' } = {}) => {
+  const firstName = String(client?.name || 'there').trim().split(/\s+/)[0];
+  const missing = (client?.documents || []).filter(doc => !doc.uploaded).map(doc => doc.name);
+  const requested = documentName ? [documentName] : missing;
+  const portalUrl = getPortalUrl(client?.portalToken || '');
+  const greeting = caName ? `Hello ${firstName}, this is CA ${caName}.` : `Hello ${firstName}, this is your CA.`;
+  const request = requested.length
+    ? `Please upload ${requested.join(', ')} using your secure client portal:`
+    : 'Please open your secure client portal to review your documents:';
+  return `${greeting}\n${request}\n${portalUrl}`;
+};
+
 export const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text);

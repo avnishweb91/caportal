@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { getPortalUrl, getWhatsAppUrl, buildClientReminderMessage } from '../lib/utils';
 
-const statusPill = { sent: 'pill-gray', delivered: 'pill-blue', read: 'pill-green' };
+const statusPill = { draft: 'pill-amber', sent: 'pill-gray', delivered: 'pill-blue', read: 'pill-green' };
 
-export default function RemindersPage({ clients, showToast }) {
+export default function RemindersPage({ clients, showToast, user }) {
   const [log, setLog] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [message, setMessage] = useState('');
@@ -10,40 +11,50 @@ export default function RemindersPage({ clients, showToast }) {
 
   const pendingClients = clients.filter(c => c.status === 'docs_pending' || c.status === 'waiting_docs');
 
-  const sendReminder = () => {
+  const prepareReminder = () => {
     if (!selectedClientId || !message.trim()) {
       showToast('Select a client and write a message', 'error');
       return;
     }
     const client = clients.find(c => c.id === Number(selectedClientId));
-    const entry = {
-      id: Date.now(),
-      clientId: client.id,
-      clientName: client.name,
-      message: message.trim(),
-      sentAt: 'Just now',
-      via: 'WhatsApp',
-      status: 'sent',
-    };
+    const text = `${message.trim().replaceAll('[Name]', client.name.split(/\s+/)[0])}\n\nYour secure CAPortal link: ${getPortalUrl(client.portalToken)}`;
+    const entry = { id: Date.now(), clientId: client.id, clientName: client.name, phone: client.phone, portalToken: client.portalToken, message: text, sentAt: new Date().toLocaleString(), via: 'WhatsApp', status: 'draft' };
     setLog(prev => [entry, ...prev]);
     setMessage('');
     setSelectedClientId('');
     setShowCompose(false);
-    showToast(`Reminder sent to ${client.name} via WhatsApp`);
+    openDraft(entry);
   };
 
-  const sendBulkReminder = () => {
+  const prepareBulkReminders = () => {
     const newEntries = pendingClients.map(c => ({
       id: Date.now() + c.id,
       clientId: c.id,
       clientName: c.name,
-      message: `Reminder: Please upload your pending documents at the earliest for timely ITR filing.`,
-      sentAt: 'Just now',
+      phone: c.phone,
+      portalToken: c.portalToken,
+      message: buildClientReminderMessage(c, { caName: user?.name || '' }),
+      sentAt: new Date().toLocaleString(),
       via: 'WhatsApp',
-      status: 'sent',
+      status: 'draft',
     }));
     setLog(prev => [...newEntries, ...prev]);
-    showToast(`Bulk reminder sent to ${pendingClients.length} clients`);
+    showToast(`Prepared ${pendingClients.length} WhatsApp drafts. Open each draft below and press Send.`);
+  };
+
+  const openDraft = (entry) => {
+    const url = getWhatsAppUrl(entry.phone, entry.message);
+    if (!url) {
+      showToast(entry.phone ? `Invalid mobile number for ${entry.clientName}` : `Add a mobile number for ${entry.clientName} first`, 'error');
+      return;
+    }
+    const popup = window.open(url, '_blank');
+    if (!popup) {
+      showToast('WhatsApp was blocked by the browser. Allow pop-ups and try again.', 'error');
+      return;
+    }
+    popup.opener = null;
+    showToast(`Draft opened for ${entry.clientName}. Press Send in WhatsApp.`);
   };
 
   return (
@@ -55,8 +66,8 @@ export default function RemindersPage({ clients, showToast }) {
         </div>
         <div className="page-actions">
           {pendingClients.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={sendBulkReminder}>
-              💬 Bulk remind ({pendingClients.length})
+            <button className="btn btn-ghost btn-sm" onClick={prepareBulkReminders}>
+              💬 Prepare reminders ({pendingClients.length})
             </button>
           )}
           <button className="btn btn-primary btn-sm" onClick={() => setShowCompose(s => !s)}>
@@ -105,7 +116,7 @@ export default function RemindersPage({ clients, showToast }) {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn-primary btn-sm" onClick={sendReminder}>Send via WhatsApp</button>
+                <button className="btn btn-primary btn-sm" onClick={prepareReminder}>Prepare WhatsApp draft</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowCompose(false)}>Cancel</button>
               </div>
             </div>
@@ -125,10 +136,13 @@ export default function RemindersPage({ clients, showToast }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.clientName}</span>
                   <span className="pill pill-gray">{r.via}</span>
-                  <span className={`pill ${statusPill[r.status] || 'pill-gray'}`}>{r.status}</span>
+                  <span className={`pill ${statusPill[r.status] || 'pill-gray'}`}>{r.status === 'draft' ? 'draft ready' : r.status}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{r.sentAt}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>{r.message}</div>
+                <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => openDraft(r)}>
+                  Open WhatsApp draft
+                </button>
               </div>
             </div>
           ))}

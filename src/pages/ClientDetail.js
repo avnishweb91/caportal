@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getPortalUrl, copyToClipboard } from '../lib/utils';
+import { getPortalUrl, copyToClipboard, getWhatsAppUrl, buildClientReminderMessage } from '../lib/utils';
 import { printInvoice } from '../lib/invoice';
 import { ACK_TYPES } from './AcknowledgmentPage';
 import './ClientDetail.css';
@@ -16,7 +16,7 @@ const PIPELINE = [
   { val: 'ack_received',     label: 'Ack received',     short: 'Ack done',  cls: 'pill-green'  },
 ];
 
-export default function ClientDetail({ client, onBack, onUpdateClient, onArchive, onEdit, onViewPortal, onGoInvoices, showToast }) {
+export default function ClientDetail({ client, user, onBack, onUpdateClient, onArchive, onEdit, onViewPortal, onGoInvoices, showToast }) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [newDocName, setNewDocName] = useState('');
@@ -31,6 +31,28 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2500);
     showToast('Portal link copied — send to client via WhatsApp');
+  };
+
+  const openWhatsAppDraft = (documentName = '') => {
+    if (!client?.phone) {
+      showToast('Add a client mobile number before sending a WhatsApp reminder', 'error');
+      return;
+    }
+    const url = getWhatsAppUrl(client.phone, buildClientReminderMessage(client, {
+      caName: user?.name || '',
+      documentName,
+    }));
+    if (!url) {
+      showToast('Enter a valid mobile number with country code', 'error');
+      return;
+    }
+    const popup = window.open(url, '_blank');
+    if (!popup) {
+      showToast('WhatsApp was blocked by the browser. Allow pop-ups and try again.', 'error');
+      return;
+    }
+    popup.opener = null;
+    showToast('WhatsApp draft opened. Review it and press Send in WhatsApp.');
   };
 
   if (!client) return null;
@@ -235,7 +257,7 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
                   ? <div className="doc-date">{doc.date}</div>
                   : (
                     <button className="doc-action-btn"
-                      onClick={() => showToast(`Reminder sent to ${client.name} for ${doc.name}`)}>
+                      onClick={() => openWhatsAppDraft(doc.name)}>
                       Send reminder
                     </button>
                   )}
@@ -326,7 +348,7 @@ export default function ClientDetail({ client, onBack, onUpdateClient, onArchive
         </div>
 
       <div className="detail-actions">
-        <button className="btn btn-primary" onClick={() => showToast('WhatsApp integration ready — add Gupshup API key in Settings')}>
+        <button className="btn btn-primary" onClick={() => openWhatsAppDraft()}>
           💬 Send WhatsApp
         </button>
         <button className={`btn ${linkCopied ? 'btn-primary' : 'btn-ghost'}`} onClick={handleCopyPortalLink}>
