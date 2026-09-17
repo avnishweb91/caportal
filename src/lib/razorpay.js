@@ -8,16 +8,16 @@ const loadScript = () =>
     document.body.appendChild(s);
   });
 
-export async function openPayment({ amount, orderId, clientName, clientEmail = '', clientPhone = '', description, notes = {}, onSuccess, onDismiss }) {
+export async function openPayment({ key: suppliedKey, amount, orderId, clientName, clientEmail = '', clientPhone = '', description, notes = {}, onSuccess, onDismiss }) {
   const loaded = await loadScript();
   if (!loaded) {
-    alert('Could not load Razorpay. Check your internet connection.');
+    onDismiss?.('Could not load Razorpay Checkout. Check your internet connection and try again.');
     return;
   }
 
-  const key = process.env.REACT_APP_RAZORPAY_KEY || '';
+  const key = suppliedKey || process.env.REACT_APP_RAZORPAY_KEY || '';
   if (!key || key.includes('YOUR_KEY_HERE')) {
-    onDismiss?.('Razorpay is not configured for subscriptions.');
+    onDismiss?.('Razorpay is not configured. Ask the administrator to verify the payment keys.');
     return;
   }
 
@@ -46,10 +46,14 @@ export async function openPayment({ amount, orderId, clientName, clientEmail = '
     },
   };
 
-  const rzp = new window.Razorpay(options);
-  rzp.on('payment.failed', e => {
-    console.error('Razorpay payment failed', e.error);
-    onDismiss?.('Payment failed: ' + e.error.description);
-  });
-  rzp.open();
+  try {
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', e => {
+      const description = e?.error?.description || 'The payment was declined. Try another payment method.';
+      onDismiss?.('Payment failed: ' + description);
+    });
+    rzp.open();
+  } catch {
+    onDismiss?.('Razorpay Checkout could not open. Check that the live/test key matches the server and try again.');
+  }
 }

@@ -1,14 +1,19 @@
 import { getBillingStatus, ensureTrialStart, activatePlan, cancelPlan, PLANS, payForPlan } from '../billing';
 import { openPayment } from '../razorpay';
+import { supabase } from '../supabase';
 
 jest.mock('../razorpay', () => ({ openPayment: jest.fn() }));
-jest.mock('../supabase', () => ({ supabase: null }));
+jest.mock('../supabase', () => ({ supabase: { functions: { invoke: jest.fn() } } }));
 
 const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
 const daysAhead = (n) => new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString();
 const setBilling = (data) => localStorage.setItem('ca_billing', JSON.stringify(data));
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  openPayment.mockReset();
+  supabase.functions.invoke.mockReset();
+});
 
 // ── Trial status ──────────────────────────────────────────────────────────────
 
@@ -156,11 +161,38 @@ describe('PLANS', () => {
 });
 
 describe('payForPlan', () => {
-  test('does not open checkout or activate locally without the server payment function', async () => {
+  test('does not open checkout if server order creation fails', async () => {
+    supabase.functions.invoke.mockResolvedValue({ data: null, error: { message: 'Function unavailable' } });
     const dismissed = jest.fn();
     await payForPlan('starter', 'CA', 'ca@example.com', jest.fn(), dismissed);
     expect(openPayment).not.toHaveBeenCalled();
-    expect(dismissed).toHaveBeenCalledWith(expect.stringContaining('Supabase payment function'));
+    expect(dismissed).toHaveBeenCalledWith('Function unavailable');
     expect(JSON.parse(localStorage.getItem('ca_billing') || '{}').plan).toBeUndefined();
+  });
+
+  test('opens checkout using the exact server key and server-created order amount', async () => {
+    supabase.functions.invoke
+      .mockResolvedValueOnce({ data: { orderId: 'order_123', amount: 79900, currency: 'INR', keyId: 'rzp_live_caportal' }, error: null })
+      .mockResolvedValueOnce({ data: { verified: true, plan: 'starter', planExpiry: '2030-01-01T00:00:00.000Z' }, error: null });
+    const success = jest.fn();
+
+    await payForPlan('starter', 'CA Raj', 'raj@example.com', success, jest.fn());
+
+    expect(openPayment).toHaveBeenCalledWith(expect.objectContaining({
+      key: 'rzp_live_caportal', orderId: 'order_123', amount: 799,
+    }));
+    expect(supabase.functions.invoke).toHaveBeenNthCalledWith(1, 'subscription-payment', {
+      body: { action: 'create_order', planId: 'starter' },
+    });
+  });
+
+  test('rejects a server order whose mode, currency, or amount does not match the plan', async () => {
+    supabase.functions.invoke.mockResolvedValue({
+      data: { orderId: 'order_bad', amount: 100, currency: 'INR', keyId: 'rzp_test_example' }, error: null,
+    });
+    const dismissed = jest.fn();
+    await payForPlan('starter', 'CA', 'ca@example.com', jest.fn(), dismissed);
+    expect(openPayment).not.toHaveBeenCalled();
+    expect(dismissed).toHaveBeenCalledWith(expect.stringContaining('invalid order configuration'));
   });
 });

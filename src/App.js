@@ -269,7 +269,7 @@ export default function App() {
 
   // ── Admin route ───────────────────────────────────────────────────────────
   if (isAdminPath) {
-    if (!user) return <AuthPage onLogin={handleLogin} defaultTab="signin" onBack={() => { window.history.pushState({}, '', '/'); window.location.reload(); }} />;
+    if (!user || authTab === 'reset') return <AuthPage onLogin={handleLogin} defaultTab={authTab === 'reset' ? 'reset' : 'signin'} onBack={() => { window.history.pushState({}, '', '/'); window.location.reload(); }} />;
     return <AdminPage user={user} />;
   }
 

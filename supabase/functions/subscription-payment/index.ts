@@ -78,7 +78,7 @@ serve(async (req: Request) => {
           notes: { caUserId: user.id, planId: String(body.planId) },
         }),
       })
-      return json({ orderId: order.id, amount: plan.amount, currency: 'INR' })
+      return json({ orderId: order.id, amount: plan.amount, currency: 'INR', keyId: Deno.env.get('RAZORPAY_KEY_ID') })
     }
 
     if (body.action === 'verify_payment') {
@@ -103,7 +103,7 @@ serve(async (req: Request) => {
       const now = new Date()
       const expiry = new Date(now)
       expiry.setDate(expiry.getDate() + 30)
-      const { error: paymentError } = await admin.from('subscription_payments').upsert({
+      const { data: insertedPayment, error: paymentError } = await admin.from('subscription_payments').upsert({
         ca_id: user.id,
         ca_email: user.email,
         razorpay_id: paymentId,
@@ -113,8 +113,19 @@ serve(async (req: Request) => {
         status: 'captured',
         plan_start: now.toISOString(),
         plan_expiry: expiry.toISOString(),
-      }, { onConflict: 'razorpay_id', ignoreDuplicates: true })
+      }, { onConflict: 'razorpay_id', ignoreDuplicates: true }).select('ca_id,plan,plan_expiry').maybeSingle()
       if (paymentError) throw paymentError
+      // A repeated valid checkout callback must not grant another 30 days.
+      // With ignoreDuplicates, a concurrent/repeated insert returns no row.
+      if (!insertedPayment) {
+        const { data: existingPayment, error: existingError } = await admin.from('subscription_payments')
+          .select('ca_id,plan,plan_expiry').eq('razorpay_id', paymentId).maybeSingle()
+        if (existingError) throw existingError
+        if (!existingPayment || existingPayment.ca_id !== user.id || existingPayment.plan !== notes.planId) {
+          return json({ error: 'Payment was already recorded for a different account or plan' }, 409)
+        }
+        return json({ verified: true, plan: existingPayment.plan, paymentId, planExpiry: existingPayment.plan_expiry })
+      }
 
       const { error: profileError } = await admin.from('profiles').update({
         plan: notes.planId,

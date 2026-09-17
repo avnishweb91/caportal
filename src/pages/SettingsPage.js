@@ -262,7 +262,7 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
                               setPayingPlan(plan.id);
                               await payForPlan(plan.id, profile.name, profile.email,
                                 () => { setPayingPlan(null); showToast(`${plan.name} plan activated!`); },
-                                () => setPayingPlan(null)
+                                (message) => { setPayingPlan(null); if (message) showToast(message, 'error'); }
                               );
                               setPayingPlan(null);
                             }}>

@@ -156,35 +156,52 @@ export const payForPlan = async (planId, caName, caEmail, onSuccess, onDismiss) 
     onDismiss?.('Subscription checkout requires the Supabase payment function.');
     return;
   }
-  const { data: order, error: orderError } = await supabase.functions.invoke('subscription-payment', {
-    body: { action: 'create_order', planId },
-  });
+  let orderResult;
+  try {
+    orderResult = await supabase.functions.invoke('subscription-payment', {
+      body: { action: 'create_order', planId },
+    });
+  } catch (error) {
+    onDismiss?.(error?.message || 'Could not contact the secure payment service. Try again.');
+    return;
+  }
+  const { data: order, error: orderError } = orderResult;
   if (orderError || !order?.orderId) {
     onDismiss?.(orderError?.message || order?.error || 'Could not start secure checkout.');
     return;
   }
+  if (!order.keyId || !/^rzp_(test|live)_/.test(order.keyId)
+    || order.currency !== 'INR' || Number(order.amount) !== plan.price * 100) {
+    onDismiss?.('Razorpay returned an invalid order configuration. Check the server and live/test payment keys.');
+    return;
+  }
 
   await openPayment({
-    amount:       plan.price,
+    key:          order.keyId,
+    amount:       Number(order.amount) / 100,
     orderId:      order.orderId,
     clientName:   caName  || 'CAPortal User',
     clientEmail:  caEmail || '',
     description:  `CAPortal ${plan.name} Plan — Monthly Subscription`,
     onSuccess: async (resp) => {
-      const { data: verified, error } = await supabase.functions.invoke('subscription-payment', {
-        body: {
-          action: 'verify_payment',
-          orderId: resp.orderId,
-          paymentId: resp.paymentId,
-          signature: resp.signature,
-        },
-      });
-      if (error || !verified?.verified || verified.plan !== planId) {
-        onDismiss?.(error?.message || verified?.error || 'Payment could not be verified. Contact support before retrying.');
-        return;
+      try {
+        const { data: verified, error } = await supabase.functions.invoke('subscription-payment', {
+          body: {
+            action: 'verify_payment',
+            orderId: resp.orderId,
+            paymentId: resp.paymentId,
+            signature: resp.signature,
+          },
+        });
+        if (error || !verified?.verified || verified.plan !== planId) {
+          onDismiss?.(error?.message || verified?.error || 'Payment could not be verified. Contact support before retrying.');
+          return;
+        }
+        activatePlan(planId, resp.paymentId, plan.price);
+        onSuccess?.(planId, { ...resp, planExpiry: verified.planExpiry });
+      } catch (error) {
+        onDismiss?.(error?.message || 'Payment succeeded but confirmation could not be checked. Contact support before retrying.');
       }
-      activatePlan(planId, resp.paymentId, plan.price);
-      onSuccess?.(planId, { ...resp, planExpiry: verified.planExpiry });
     },
     onDismiss,
   });
