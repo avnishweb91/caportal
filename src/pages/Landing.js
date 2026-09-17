@@ -334,15 +334,37 @@ export default function Landing({ onGetStarted, onSignIn, user }) {
       </nav>
 
       {/* HERO */}
-      <div className="hero">
-        <div className="hero-badge"><div className="hero-badge-dot"/>&nbsp;Built exclusively for Indian CAs</div>
-        <h1 className="hero-h1">Stop running your practice<br/>on <s>WhatsApp</s><br/>Start using <em>CAPortal.</em></h1>
-        <p className="hero-sub">Document collection, tax computation, balance sheets, 7-step filing workflow, and acknowledgment tracking — built for Indian CAs. All in one place.</p>
-        <div className="hero-actions">
-          <button className="btn btn-primary btn-lg" onClick={() => onGetStarted('signin')}>See the dashboard →</button>
-          <button className="btn btn-ghost btn-lg" onClick={() => setActiveModal('about')}>Learn more</button>
+      <section className="hero">
+        <div className="hero-copy">
+          <div className="hero-badge"><div className="hero-badge-dot"/>&nbsp;Practice management for Indian CAs</div>
+          <h1 className="hero-h1">Your CA practice,<br /><em>finally in one place.</em></h1>
+          <p className="hero-sub">Collect documents, track every filing, and keep clients updated — without chasing work across spreadsheets and chat threads.</p>
+          <div className="hero-actions">
+            <button className="btn btn-primary btn-lg" onClick={() => onGetStarted('signup')}>Start your free trial <span aria-hidden="true">→</span></button>
+            <button className="btn btn-ghost btn-lg" onClick={() => setActiveModal('about')}>Explore CAPortal</button>
+          </div>
+          <div className="hero-reassurance"><span className="hero-check">✓</span> 14 days free <span className="hero-separator">·</span> No card required <span className="hero-separator">·</span> Built for CA workflows</div>
         </div>
-      </div>
+        <div className="hero-product" aria-label="Illustration of a CAPortal practice dashboard">
+          <div className="product-window">
+            <div className="product-window-bar"><div className="window-dots"><i/><i/><i/></div><span>CAPortal <b>/</b> Sample workspace</span><div className="product-avatar">R</div></div>
+            <div className="product-content">
+              <div className="product-greeting"><div><span>YOUR PRACTICE AT A GLANCE</span><strong>Good morning, Raj</strong></div><span className="product-season"><i/> ITR season</span></div>
+              <div className="product-metrics">
+                <div><span>Active clients</span><strong>128</strong><small>Across all filing types</small></div>
+                <div><span>Documents received</span><strong>76%</strong><small>Client checklist progress</small></div>
+                <div><span>Fees collected</span><strong>₹1.8L</strong><small>This financial year</small></div>
+              </div>
+              <div className="product-work-title"><strong>Client work</strong><span>View all clients →</span></div>
+              <div className="product-client-row"><div className="product-client-avatar avatar-indigo">AS</div><div className="product-client-name"><strong>Client workspace</strong><span>ITR-1 · 4 of 6 documents</span></div><span className="product-status status-progress">In progress</span></div>
+              <div className="product-client-row"><div className="product-client-avatar avatar-mint">MK</div><div className="product-client-name"><strong>Client workspace</strong><span>ITR-2 · Ready for review</span></div><span className="product-status status-ready">Ready</span></div>
+              <div className="product-progress"><span/><span/><span/><span/><span/><span/><span/></div>
+              <div className="product-progress-caption"><span>Filing pipeline</span><span>Track each step from documents to acknowledgment</span></div>
+            </div>
+          </div>
+          <div className="product-float-note"><span>✓</span><div><strong>One clear workflow</strong><small>From first upload to filed</small></div></div>
+        </div>
+      </section>
 
       {/* STATS */}
       <div className="stats-bar">
