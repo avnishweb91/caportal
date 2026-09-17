@@ -33,6 +33,10 @@ describe('ClientFormModal — rendering', () => {
     renderModal();
     expect(screen.getByText(/Auto-loaded checklist/i)).toBeInTheDocument();
   });
+  test('WhatsApp consent is unchecked by default', () => {
+    renderModal();
+    expect(screen.getByRole('checkbox', { name: /Client has agreed to receive WhatsApp reminders/i })).not.toBeChecked();
+  });
   test('doc preview hidden in edit mode', () => {
     renderModal({ name: 'A', pan: 'ABCDE1234F', phone: '9', email: 'a@a.com', type: 'ITR-1', plan: 'Starter', feeAmount: 500, documents: [] });
     expect(screen.queryByText(/Auto-loaded checklist/i)).not.toBeInTheDocument();
@@ -127,6 +131,17 @@ describe('ClientFormModal — submission', () => {
     fireEvent.change(screen.getByPlaceholderText('3500'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: /Add client/i }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ pan: 'ABCDE1234F' }));
+  });
+  test('saves WhatsApp consent only when explicitly checked', () => {
+    renderModal();
+    fireEvent.change(screen.getByPlaceholderText('Priya Sharma'), { target: { value: 'Test' } });
+    fireEvent.change(screen.getByPlaceholderText('ABCDE1234F'), { target: { value: 'ABCDE1234F' } });
+    fireEvent.change(screen.getByPlaceholderText('+91 98765 43210'), { target: { value: '9999999999' } });
+    fireEvent.change(screen.getByPlaceholderText('client@example.com'), { target: { value: 'a@b.com' } });
+    fireEvent.change(screen.getByPlaceholderText('3500'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Client has agreed to receive WhatsApp reminders/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Add client/i }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ whatsappOptIn: true }));
   });
   test('documents loaded from selected template', () => {
     renderModal();

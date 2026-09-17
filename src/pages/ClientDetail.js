@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getPortalUrl, copyToClipboard, getWhatsAppUrl, buildClientReminderMessage } from '../lib/utils';
 import { printInvoice } from '../lib/invoice';
+import { sendClientReminderViaTwilio } from '../lib/supabase';
 import { ACK_TYPES } from './AcknowledgmentPage';
 import './ClientDetail.css';
 
@@ -24,6 +25,7 @@ export default function ClientDetail({ client, user, onBack, onUpdateClient, onA
   const [linkCopied, setLinkCopied] = useState(false);
   const [showAckForm, setShowAckForm] = useState(false);
   const [ackForm, setAckForm] = useState({ type: 'itr', refNo: '', period: '', filedDate: '', notes: '' });
+  const [twilioSending, setTwilioSending] = useState(false);
 
   const handleCopyPortalLink = async () => {
     const url = getPortalUrl(client.portalToken);
@@ -53,6 +55,23 @@ export default function ClientDetail({ client, user, onBack, onUpdateClient, onA
     }
     popup.opener = null;
     showToast('WhatsApp draft opened. Review it and press Send in WhatsApp.');
+  };
+
+  const sendViaTwilio = async (documentName = '') => {
+    if (!client?.whatsappOptIn) {
+      showToast('Record the client’s WhatsApp consent before sending automated reminders.', 'error');
+      return;
+    }
+    setTwilioSending(true);
+    const { error, code } = await sendClientReminderViaTwilio(client.id, documentName);
+    setTwilioSending(false);
+    if (error) {
+      showToast(code === 'twilio_not_configured'
+        ? 'Twilio is not configured yet. Add the required Supabase Function secrets.'
+        : error, 'error');
+      return;
+    }
+    showToast('Twilio accepted the reminder for delivery.');
   };
 
   if (!client) return null;
@@ -350,6 +369,11 @@ export default function ClientDetail({ client, user, onBack, onUpdateClient, onA
       <div className="detail-actions">
         <button className="btn btn-primary" onClick={() => openWhatsAppDraft()}>
           💬 Send WhatsApp
+        </button>
+        <button className="btn btn-ghost" onClick={() => sendViaTwilio()}
+          disabled={!client.whatsappOptIn || twilioSending}
+          title={client.whatsappOptIn ? 'Send an approved WhatsApp template through Twilio' : 'Record client WhatsApp consent in Edit client first'}>
+          {twilioSending ? 'Sending…' : 'Send via Twilio'}
         </button>
         <button className={`btn ${linkCopied ? 'btn-primary' : 'btn-ghost'}`} onClick={handleCopyPortalLink}>
           {linkCopied ? '✓ Link copied!' : '🔗 Copy portal link'}

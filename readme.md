@@ -97,7 +97,7 @@ Client Detail → "Download invoice" → professional invoice opens in new tab �
 | Client fee payments | UPI direct | CA's UPI ID — zero commission, instant to CA's bank |
 | Webhook | Supabase Edge Functions | `supabase/functions/razorpay-webhook/index.ts` |
 | Email | Not configured | No outbound email delivery yet |
-| WhatsApp | wa.me drafts | CA reviews and sends from WhatsApp; no Twilio credentials configured |
+| WhatsApp | wa.me drafts + optional Twilio Edge Function | Automated reminders require client opt-in, a WhatsApp-approved template, and server-side Twilio credentials |
 | Hosting | Vercel | Auto-deploys on push to `develop` |
 
 ---
@@ -178,7 +178,7 @@ REACT_APP_SUPABASE_URL=https://your-ref.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJ...
 
 # Outbound WhatsApp: reminders open a prefilled wa.me draft in the CA's WhatsApp.
-# Automated Twilio sending is not configured yet. Never expose Twilio secrets as REACT_APP_*.
+# Optional automated Twilio sending is server-side only. Never expose Twilio secrets as REACT_APP_*.
 ```
 
 Also set in **Vercel → Settings → Environment Variables** for production.
@@ -211,6 +211,7 @@ Demo login: `support@caportal.co` / `demo1234`
 npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase secrets set RAZORPAY_KEY_ID=rzp_live_... RAZORPAY_KEY_SECRET=... RAZORPAY_WEBHOOK_SECRET=...
 npx supabase functions deploy client-portal
+npx supabase functions deploy send-client-reminder
 npx supabase functions deploy subscription-payment
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
 ```
@@ -220,6 +221,21 @@ npx supabase functions deploy razorpay-webhook --no-verify-jwt
 Register in Razorpay → Settings → Webhooks:
 - URL: `https://YOUR_REF.supabase.co/functions/v1/razorpay-webhook`
 - Event: `payment.captured` only
+
+## Optional Twilio WhatsApp Reminders
+
+Manual WhatsApp drafts work without Twilio. For automated delivery:
+
+1. Configure an approved WhatsApp sender in Twilio and create/submit a Content Template for WhatsApp approval. Use these exact variables in order: `{{1}}` client name, `{{2}}` CA or firm name, `{{3}}` missing document names, and `{{4}}` secure portal URL. A suitable template is: “Hello {{1}}, this is {{2}}. Please upload {{3}} using your secure client portal: {{4}}”. Use the approved template's Content SID.
+2. Record each client's permission in **Edit client → Client has agreed to receive WhatsApp reminders**. The automated button stays disabled until opted in. Consent must be obtained outside CAPortal and recorded accurately by the CA.
+3. Add secrets to the Supabase project (Dashboard → Edge Functions → Secrets, or CLI). Do not add them to `.env`, Vercel, or any `REACT_APP_*` variable:
+
+   ```bash
+   npx supabase secrets set TWILIO_ACCOUNT_SID=AC... TWILIO_AUTH_TOKEN=... TWILIO_WHATSAPP_FROM=whatsapp:+14155238886 TWILIO_WHATSAPP_CONTENT_SID=HX...
+   ```
+
+   `TWILIO_WHATSAPP_FROM` must be the approved Twilio sender in `whatsapp:+countrycode...` format; the example number is only a format example.
+4. Deploy `send-client-reminder`. In Client Detail, **Send via Twilio** requests reminders for all outstanding documents. The manual **Send WhatsApp** action remains available. CAPortal reports when Twilio accepts a message; it does not currently track final delivery or failures after acceptance.
 
 ---
 

@@ -16,6 +16,7 @@ export default function ClientFormModal({ client, onSave, onClose }) {
     type:      client?.type      || 'ITR-1',
     plan:      client?.plan      || 'Starter',
     feeAmount: client?.feeAmount || '',
+    whatsappOptIn: !!client?.whatsappOptIn,
   });
   const [errors, setErrors] = useState({});
 
@@ -50,6 +51,7 @@ export default function ClientFormModal({ client, onSave, onClose }) {
       type:       form.type,
       plan:       form.plan,
       feeAmount:  Number(form.feeAmount),
+      whatsappOptIn: !!form.whatsappOptIn,
       documents,
       docsTotal:  documents.length,
       ...(isEdit ? {} : { docsReceived: 0 }),
@@ -131,6 +133,12 @@ export default function ClientFormModal({ client, onSave, onClose }) {
               style={{ fontFamily: 'var(--mono)' }} />
             {errors.feeAmount && <span className="form-error">{errors.feeAmount}</span>}
           </div>
+
+          <label className="form-hint" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12 }}>
+            <input type="checkbox" checked={form.whatsappOptIn}
+              onChange={e => set('whatsappOptIn', e.target.checked)} />
+            <span>Client has agreed to receive WhatsApp reminders from me. Automated messages are sent only with this consent.</span>
+          </label>
 
           {!isEdit && form.type && (
             <div className="docs-preview">

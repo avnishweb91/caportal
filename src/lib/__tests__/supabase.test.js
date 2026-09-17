@@ -14,6 +14,7 @@ describe('Supabase client row mapping', () => {
     feeAmount: 3500,
     feePaid: false,
     feePaymentStatus: 'reported',
+    whatsappOptIn: true,
     docsReceived: 1,
     docsTotal: 2,
     documents: [{ name: 'Form 16', uploaded: true, date: 'Today' }, { name: 'PAN', uploaded: false, date: null }],
@@ -27,7 +28,7 @@ describe('Supabase client row mapping', () => {
       ca_id: 'ca-user-id', portal_token: client.portalToken, fee_amount: 3500,
       fee_paid: false, fee_payment_status: 'reported', docs_received: 1, docs_total: 2,
     });
-    expect(row.data).toMatchObject({ documents: client.documents, timeline: client.timeline, acknowledgments: client.acknowledgments });
+    expect(row.data).toMatchObject({ documents: client.documents, timeline: client.timeline, acknowledgments: client.acknowledgments, whatsappOptIn: true });
   });
 
   test('restores nested client data and uses database-owned identifiers/status', () => {
@@ -41,5 +42,6 @@ describe('Supabase client row mapping', () => {
     expect(restored.feePaymentStatus).toBe('reported');
     expect(restored.documents).toEqual(client.documents);
     expect(restored.acknowledgments).toEqual(client.acknowledgments);
+    expect(restored.whatsappOptIn).toBe(true);
   });
 });

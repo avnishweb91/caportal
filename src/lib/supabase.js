@@ -91,6 +91,14 @@ export const reportPortalPayment = async (token) => {
   return { data, error: error?.message || data?.error || null };
 };
 
+export const sendClientReminderViaTwilio = async (clientId, docName) => {
+  if (!supabase) return { data: null, error: 'Supabase not configured' };
+  const { data, error } = await supabase.functions.invoke('send-client-reminder', {
+    body: { clientId, ...(docName ? { docName } : {}) },
+  });
+  return { data, error: error?.message || data?.error || null, code: data?.code || null };
+};
+
 export const uploadPortalDocument = async (file, portalToken, docName) => {
   if (!supabase) return { error: 'Supabase not configured', path: null };
   const { data: { session } } = await supabase.auth.getSession();

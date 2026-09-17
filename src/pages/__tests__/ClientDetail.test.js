@@ -1,5 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ClientDetail from '../ClientDetail';
+import { sendClientReminderViaTwilio } from '../../lib/supabase';
+
+jest.mock('../../lib/supabase', () => ({ sendClientReminderViaTwilio: jest.fn() }));
 
 const client = {
   id: 8,
@@ -52,5 +55,20 @@ describe('ClientDetail WhatsApp actions', () => {
 
     const [url] = window.open.mock.calls[0];
     expect(decodeURIComponent(url)).toContain('Form 16');
+  });
+
+  test('Twilio automation requires recorded opt-in and calls the server function', async () => {
+    sendClientReminderViaTwilio.mockResolvedValue({ error: null });
+    render(<ClientDetail client={{ ...client, whatsappOptIn: true }} user={{ name: 'Raj' }} showToast={showToast} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Send via Twilio/i }));
+
+    expect(sendClientReminderViaTwilio).toHaveBeenCalledWith(client.id, '');
+    await waitFor(() => expect(showToast).toHaveBeenCalledWith('Twilio accepted the reminder for delivery.'));
+  });
+
+  test('Twilio action is disabled unless the client opted in', () => {
+    render(<ClientDetail client={client} user={{ name: 'Raj' }} showToast={showToast} />);
+    expect(screen.getByRole('button', { name: /Send via Twilio/i })).toBeDisabled();
   });
 });

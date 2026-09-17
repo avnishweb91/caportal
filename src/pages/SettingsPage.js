@@ -181,10 +181,16 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
                   <div style={{ flex: 1 }}>
                     <div className="int-name">WhatsApp Reminders</div>
                     <div className="int-desc">
-                      Prepare a WhatsApp message with the client’s missing documents and secure portal link. Review it and press Send in WhatsApp. Automated Twilio delivery is not connected yet; it needs a Twilio WhatsApp sender, an approved template, and server-side credentials.
+                      Manual drafts work now. Automated Twilio delivery is available for clients whose WhatsApp consent is recorded in Add/Edit client. Configure its sender, approved template, and server-side Function secrets below before use.
                     </div>
                   </div>
-                  <span className="pill pill-blue">Manual send</span>
+                  <span className="pill pill-blue">Manual + Twilio</span>
+                </div>
+                <div className="form-hint" style={{ marginTop: 10 }}>
+                  Supabase Function secrets: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (format whatsapp:+countrycode...), and TWILIO_WHATSAPP_CONTENT_SID (approved HX… template). Never put Twilio credentials in Vercel or the browser app.
+                </div>
+                <div className="form-hint" style={{ marginTop: 8 }}>
+                  Create and get approval for a WhatsApp template with variables 1 (client name), 2 (CA/firm name), 3 (missing document names), and 4 (secure portal URL). Suggested text: “Hello [1], this is [2]. Please upload [3] using your secure client portal: [4]”.
                 </div>
               </div>
 
@@ -202,7 +208,7 @@ export default function SettingsPage({ user, setUser, clients = [], onClearClien
 
               <button className="btn btn-primary" onClick={saveKeys}>Save settings</button>
               <div className="settings-note">
-                WhatsApp drafts open with the client’s mobile number and portal link. Nothing is marked sent until you send it in WhatsApp. Automated Twilio delivery needs a separate integration, account credentials, sender approval, an approved message template, and client opt-in.
+                Manual drafts open with the client’s mobile number and portal link. Twilio requests are sent server-side and require recorded client consent plus an approved WhatsApp template. A successful request means Twilio accepted it; delivery status is not tracked in CAPortal.
               </div>
             </div>
           )}
